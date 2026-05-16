@@ -1,7 +1,6 @@
 """
 app/pages/02_simulacion.py
 Módulo 2: Configuración y ejecución del motor de simulación estocástica.
-Con barra de progreso animada, métricas en tiempo real y mini preview.
 """
 import streamlit as st
 import time
@@ -47,31 +46,34 @@ with st.expander("📋 Resumen del escenario configurado", expanded=True):
     c1.metric("Pilotes", params.cantidad_pilotes)
     c2.metric("Mixers", params.num_mixers)
     c3.metric("Distancia (km)", params.distancia_proveedor_km)
-    c4.metric("Suelo", params.tipo_suelo.label if hasattr(params.tipo_suelo, 'label') else params.tipo_suelo)
+    c4.metric("Suelo", params.tipo_suelo.label)
     
     vol_total = math.pi * (params.diametro_m / 2) ** 2 * params.longitud_m * params.cantidad_pilotes
     c5.metric("Vol. total", f"{vol_total:.1f} m³")
 
 # --- Estimación de tiempos ---
-t_transporte = (params.distancia_proveedor_km * 2) / params.velocidad_transporte_kmh
+horas_dia = params.horas_por_dia
+t_transporte = params.tiempo_transporte_h
 t_perf_ajustado = params.tiempo_perforacion_ajustado_media
-t_estimado_pilote = t_perf_ajustado + params.tiempo_colado_h_media + t_transporte / params.num_mixers
+t_colado = params.tiempo_colado_h_media
+t_estimado_pilote = t_perf_ajustado + t_colado + t_transporte / params.num_mixers
 t_total_estimado = t_estimado_pilote * params.cantidad_pilotes
+dias_estimados = t_total_estimado / horas_dia
 
 # Mini preview de resultados esperados
 st.markdown(f"""
 <div class="preview-card">
     <h4>📊 Estimación Preliminar</h4>
     <div class="preview-row">
-        <span class="preview-label">Tiempo estimado por pilote</span>
-        <span class="preview-value">{t_estimado_pilote:.2f} h</span>
+        <span class="preview-label">Tiempo por pilote</span>
+        <span class="preview-value">{t_estimado_pilote:.2f} h ({t_estimado_pilote*60:.0f} min)</span>
     </div>
     <div class="preview-row">
-        <span class="preview-label">Duración total estimada</span>
-        <span class="preview-value">{t_total_estimado:.1f} h ({t_total_estimado/24:.1f} días)</span>
+        <span class="preview-label">Duración total</span>
+        <span class="preview-value">{t_total_estimado:.1f} h ({dias_estimados:.1f} días de {horas_dia:.0f}h)</span>
     </div>
     <div class="preview-row">
-        <span class="preview-label">Tiempo transporte (ida/vuelta)</span>
+        <span class="preview-label">Transporte (ida/vuelta)</span>
         <span class="preview-value">{t_transporte:.2f} h</span>
     </div>
 </div>
@@ -101,7 +103,6 @@ st.divider()
 ejecutar = st.button("🚀 Ejecutar Simulación", use_container_width=True, type="primary")
 
 if ejecutar:
-    # Etapas de progreso
     stages_container = st.empty()
     
     stages = [
@@ -130,12 +131,10 @@ if ejecutar:
     with st.spinner(""):
         t0 = time.time()
         
-        # Stage 1
         stages[0] = ("🔢", "Generando variables aleatorias...", True)
         render_stages(stages)
         time.sleep(0.1)
         
-        # Stage 2
         stages[1] = ("⚙️", "Ejecutando motor SimPy...", True)
         render_stages(stages)
         
@@ -143,12 +142,10 @@ if ejecutar:
         
         elapsed = time.time() - t0
         
-        # Stage 3
         stages[2] = ("📊", "Calculando KPIs y estadísticas...", True)
         render_stages(stages)
         time.sleep(0.1)
         
-        # Stage 4
         stages[3] = ("✅", f"Simulación completada en {elapsed:.1f}s", True)
         render_stages(stages)
 
@@ -160,9 +157,9 @@ if ejecutar:
         st.subheader("📊 Resultados Clave")
         col1, col2, col3, col4 = st.columns(4)
         col1.metric("⏱️ Duración P50", f"{k.tiempo_proyecto_p50_h:.1f} h",
-                    delta=f"{k.dias_p50:.1f} días")
+                    delta=f"{k.tiempo_proyecto_p50_h/horas_dia:.1f} días")
         col2.metric("📈 Duración P90", f"{k.tiempo_proyecto_p90_h:.1f} h",
-                    delta=f"+{k.tiempo_proyecto_p90_h - k.tiempo_proyecto_p50_h:.1f}h vs P50")
+                    delta=f"{k.tiempo_proyecto_p90_h/horas_dia:.1f} días")
         col3.metric("⚡ Cuello de botella", k.cuello_botella)
         col4.metric("🔧 Utilización Mixer", f"{k.utilizacion_mixer_pct:.0f}%",
                     delta="⚠️ Alta" if k.utilizacion_mixer_pct > 85 else "✅ Normal",
