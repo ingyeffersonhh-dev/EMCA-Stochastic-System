@@ -357,18 +357,36 @@ css = f"""
         border: 1px solid {border};
     }}
 
-    .stTextInput > div > div > input,
-    .stNumberInput > div > div > input,
-    .stTextArea > div > div > textarea,
-    .stSelectbox > div > div > select {{
+    .stExpander {{
         background-color: {bg_card} !important;
+        border: 1px solid {border} !important;
+        border-radius: 12px !important;
+    }}
+    .stExpander > div {{
         color: {text_primary} !important;
-        border-color: {border} !important;
     }}
 
     [data-baseweb="select"] > div {{
         background-color: {bg_card} !important;
         color: {text_primary} !important;
+    }}
+    [data-baseweb="select"] input {{
+        color: {text_primary} !important;
+    }}
+    [data-baseweb="popover"] [data-baseweb="menu"] {{
+        background-color: {bg_card} !important;
+        color: {text_primary} !important;
+    }}
+    [data-baseweb="popover"] [data-baseweb="option"] {{
+        color: {text_primary} !important;
+    }}
+
+    .stTextInput > div > div > input,
+    .stNumberInput > div > div > input,
+    .stTextArea > div > div > textarea {{
+        background-color: {bg_card} !important;
+        color: {text_primary} !important;
+        border-color: {border} !important;
     }}
 
     .stSlider > div > div > div > div {{
@@ -378,6 +396,38 @@ css = f"""
     .stCheckbox > label > div {{
         background-color: {bg_card} !important;
         border-color: {border} !important;
+    }}
+
+    .stRadio > label > div {{
+        background-color: {bg_card} !important;
+        border-color: {border} !important;
+    }}
+    .stRadio > label > div > div {{
+        background-color: #27ae60 !important;
+    }}
+
+    [data-testid="stMarkdownContainer"] p,
+    [data-testid="stMarkdownContainer"] span,
+    [data-testid="stMarkdownContainer"] li {{
+        color: {text_primary} !important;
+    }}
+
+    [data-testid="stCaption"] {{
+        color: {text_secondary} !important;
+    }}
+
+    [data-testid="stAlert"] {{
+        background-color: {bg_card} !important;
+        color: {text_primary} !important;
+        border-color: {border} !important;
+    }}
+
+    .stPlotlyChart {{
+        background: transparent !important;
+    }}
+
+    [data-testid="stHeader"] {{
+        background: transparent !important;
     }}
 </style>
 """

@@ -18,14 +18,25 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 class TipoSuelo(str, Enum):
     SUELO_SECO = "suelo_seco"
     SUELO_AGUA = "suelo_agua"
+    # Compatibilidad con versión anterior
+    ARCILLA_BLANDA = "arcilla_blanda"
+    ARCILLA_DURA = "arcilla_dura"
+    ARENA_SUELTA = "arena_suelta"
+    ARENA_DENSA = "arena_densa"
+    ROCA_BLANDA = "roca_blanda"
 
     @property
     def label(self) -> str:
         labels = {
             "suelo_seco": "Suelo Seco",
             "suelo_agua": "Suelo con Presencia de Agua",
+            "arcilla_blanda": "Arcilla Blanda",
+            "arcilla_dura": "Arcilla Dura",
+            "arena_suelta": "Arena Suelta",
+            "arena_densa": "Arena Densa",
+            "roca_blanda": "Roca Blanda",
         }
-        return labels[self.value]
+        return labels.get(self.value, self.value)
 
     @property
     def factor_dificultad(self) -> float:
@@ -33,8 +44,13 @@ class TipoSuelo(str, Enum):
         factores = {
             "suelo_seco": 1.0,
             "suelo_agua": 1.35,
+            "arcilla_blanda": 0.85,
+            "arcilla_dura": 1.20,
+            "arena_suelta": 0.90,
+            "arena_densa": 1.10,
+            "roca_blanda": 1.50,
         }
-        return factores[self.value]
+        return factores.get(self.value, 1.0)
 
 
 class TipoDistribucion(str, Enum):
@@ -143,6 +159,35 @@ class ParametrosEntrada(BaseModel):
     # ---------------------------------------------------------------------------
     # Validadores
     # ---------------------------------------------------------------------------
+
+    @model_validator(mode="before")
+    @classmethod
+    def compatibilidad_campos_viejos(cls, data):
+        """Convierte campos de versión anterior a los nuevos nombres."""
+        if isinstance(data, dict):
+            # Velocidad de transporte
+            if "velocidad_transporte_kmh" in data and "velocidad_transporte_kmh_media" not in data:
+                data["velocidad_transporte_kmh_media"] = data.pop("velocidad_transporte_kmh")
+            if "velocidad_transporte_kmh_std" not in data:
+                data["velocidad_transporte_kmh_std"] = 10.0
+
+            # Tiempos de perforación (horas -> minutos)
+            if "tiempo_perforacion_h_media" in data and "tiempo_perforacion_min_media" not in data:
+                data["tiempo_perforacion_min_media"] = data.pop("tiempo_perforacion_h_media") * 60
+            if "tiempo_perforacion_h_std" in data and "tiempo_perforacion_min_std" not in data:
+                data["tiempo_perforacion_min_std"] = data.pop("tiempo_perforacion_h_std") * 60
+
+            # Tiempos de colado (horas -> minutos)
+            if "tiempo_colado_h_media" in data and "tiempo_colado_min_media" not in data:
+                data["tiempo_colado_min_media"] = data.pop("tiempo_colado_h_media") * 60
+            if "tiempo_colado_h_std" in data and "tiempo_colado_min_std" not in data:
+                data["tiempo_colado_min_std"] = data.pop("tiempo_colado_h_std") * 60
+
+            # Horas por día
+            if "horas_por_dia" not in data:
+                data["horas_por_dia"] = 8.0
+
+        return data
 
     @field_validator("tiempo_perforacion_min_std")
     @classmethod
