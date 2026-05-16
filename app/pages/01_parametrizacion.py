@@ -111,7 +111,7 @@ with st.form("form_parametros", clear_on_submit=False):
         st.subheader("Tiempos de Colado de Concreto")
         c12, c13 = st.columns(2)
         with c12:
-            t_colado_media = st.number_input("Media tiempo colado (h)", 0.5, 23.9,
+            t_colado_media = st.number_input("Media tiempo colado (h)", 0.0, 23.9,
                                              value=prev.get("tiempo_colado_h_media", 2.0), step=0.25)
         with c13:
             dist_colado = st.selectbox("Distribución (Colado)", [e.value for e in TipoDistribucion],
