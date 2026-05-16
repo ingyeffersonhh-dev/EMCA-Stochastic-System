@@ -113,8 +113,14 @@ if ejecutar:
     
     def render_stages(stages):
         html = ""
-        for icon, label, done in stages:
-            cls = "done" if done else ("active" if not done and any(not d for _, _, d in stages) and stages.index((icon, label, done)) == next((i for i, (_, _, d) in enumerate(stages) if not d), 0)) else ""
+        first_incomplete = next((i for i, (_, _, d) in enumerate(stages) if not d), len(stages))
+        for idx, (icon, label, done) in enumerate(stages):
+            if done:
+                cls = "done"
+            elif idx == first_incomplete:
+                cls = "active"
+            else:
+                cls = ""
             html += f'<div class="progress-stage {cls}"><span class="progress-icon">{icon}</span><span class="progress-label">{label}</span></div>'
         stages_container.markdown(html, unsafe_allow_html=True)
     
