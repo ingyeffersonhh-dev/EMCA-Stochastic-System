@@ -116,7 +116,7 @@ class ParametrosEntrada(BaseModel):
 
     # --- Parámetros estocásticos: Colado ---
     tiempo_colado_h_media: float = Field(
-        ..., gt=0.0, lt=24.0,
+        ..., gt=0.5, lt=24.0,
         description="Tiempo promedio de colado de concreto por pilote (horas)"
     )
     tiempo_colado_h_std: Optional[float] = Field(
