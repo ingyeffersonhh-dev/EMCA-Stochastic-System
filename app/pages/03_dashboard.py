@@ -6,57 +6,14 @@ import streamlit as st
 import plotly.express as px
 import plotly.graph_objects as go
 import numpy as np
+import pandas as pd
 
 from core.analytics.kpis import resumen_estadistico, tabla_eventos_df, distribucion_tiempos_df
 from core.analytics.gantt import generar_gantt_df, generar_curva_s
 from core.analytics.exportar import exportar_excel
 
-st.markdown("""
-<style>
-    /* Tarjetas KPI nativas de Streamlit (st.metric) */
-    div[data-testid="metric-container"] {
-        background-color: var(--secondary-background-color);
-        border: 1px solid rgba(128, 128, 128, 0.2);
-        padding: 1.2rem;
-        border-radius: 12px;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
-        border-left: 5px solid #3b82f6;
-    }
-    div[data-testid="metric-container"]:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 15px rgba(0,0,0,0.15);
-    }
-
-    .alerta-roja {
-        background-color: rgba(239, 68, 68, 0.1);
-        border: 1px solid #ef4444;
-        border-left: 5px solid #ef4444;
-        border-radius: 12px;
-        padding: 1.2rem;
-        color: var(--text-color);
-        font-weight: 500;
-        box-shadow: 0 4px 6px rgba(239, 68, 68, 0.05);
-    }
-    
-    .dash-title {
-        background: linear-gradient(135deg, rgba(30, 58, 95, 0.9) 0%, rgba(46, 109, 164, 0.9) 100%);
-        backdrop-filter: blur(10px);
-        color: white;
-        padding: 1.5rem 2rem;
-        border-radius: 16px;
-        margin-bottom: 2rem;
-        box-shadow: 0 10px 25px rgba(30, 58, 95, 0.15);
-    }
-    .dash-title h2 { color: white; margin: 0; font-weight: 700; letter-spacing: -0.5px; }
-</style>
-""", unsafe_allow_html=True)
-
-st.markdown("""
-<div class="dash-title">
-    <h2>📊 Módulo 3 — Panel de Control Gerencial</h2>
-</div>
-""", unsafe_allow_html=True)
+st.title("📊 Panel de Control Gerencial")
+st.caption("Visión analítica del desempeño del sistema logístico y de construcción.")
 
 # --- Pre-condición ---
 if "resultado" not in st.session_state:
@@ -113,30 +70,39 @@ st.subheader("📊 Distribución de la Duración del Proyecto (Monte Carlo)")
 tiempos = resultado.tiempos_proyecto_todas_replicas
 if tiempos:
     arr = np.array(tiempos)
-    fig_hist = go.Figure()
-
-    fig_hist.add_trace(go.Histogram(
-        x=arr, nbinsx=40, name="Réplicas",
-        marker_color="#2E6DA4", opacity=0.75,
-        hovertemplate="Duración: %{x:.1f}h<br>Frecuencia: %{y}<extra></extra>"
-    ))
+    df_tiempos = pd.DataFrame({"Duración": arr})
+    fig_hist = px.histogram(
+        df_tiempos, x="Duración", nbins=40,
+        marginal="box",
+        color_discrete_sequence=["#3b82f6"],
+    )
+    fig_hist.update_traces(opacity=0.85, marker_line_width=0, selector=dict(type="histogram"))
+    fig_hist.update_traces(fillcolor="rgba(59, 130, 246, 0.2)", line_color="#3b82f6", selector=dict(type="box"))
 
     for pct, color, label in [
-        (kpis.tiempo_proyecto_p10_h, "#27AE60", "P10"),
-        (kpis.tiempo_proyecto_p50_h, "#F39C12", "P50 (mediana)"),
-        (kpis.tiempo_proyecto_p90_h, "#E74C3C", "P90"),
+        (kpis.tiempo_proyecto_p10_h, "#2ecc71", "P10"),
+        (kpis.tiempo_proyecto_p50_h, "#f39c12", "P50 (Mediana)"),
+        (kpis.tiempo_proyecto_p90_h, "#ef4444", "P90"),
     ]:
-        fig_hist.add_vline(x=pct, line_dash="dash", line_color=color,
-                           annotation_text=f"{label}: {pct:.1f}h",
-                           annotation_position="top")
+        fig_hist.add_vline(
+            x=pct, line_dash="dash", line_color=color, line_width=2,
+            annotation_text=f"<b>{label}</b><br>{pct:.1f}h",
+            annotation_position="top right",
+            annotation_font=dict(color=color, size=11),
+            annotation_bgcolor="rgba(128,128,128,0.1)"
+        )
 
     fig_hist.update_layout(
         xaxis_title="Duración del proyecto (h)",
         yaxis_title="Frecuencia",
-        plot_bgcolor="white",
-        height=380,
+        plot_bgcolor="rgba(0,0,0,0)",
+        paper_bgcolor="rgba(0,0,0,0)",
+        height=400,
         showlegend=False,
-        margin=dict(t=40, b=40),
+        margin=dict(t=40, b=40, l=40, r=40),
+        xaxis=dict(showgrid=False),
+        yaxis=dict(showgrid=True, gridcolor="rgba(128,128,128,0.2)"),
+        font=dict(family="Inter, sans-serif")
     )
     st.plotly_chart(fig_hist, use_container_width=True)
 
@@ -169,9 +135,12 @@ if not gantt_df.empty:
     fig_gantt.update_yaxes(autorange="reversed")
     fig_gantt.update_layout(
         height=max(400, len(gantt_df["Pilote"].unique()) * 28 + 80),
-        plot_bgcolor="white",
+        plot_bgcolor="rgba(0,0,0,0)",
+        paper_bgcolor="rgba(0,0,0,0)",
         margin=dict(t=40, b=40),
         legend_title="Fase",
+        xaxis=dict(showgrid=True, gridcolor="rgba(128,128,128,0.2)"),
+        font=dict(family="Inter, sans-serif")
     )
     st.plotly_chart(fig_gantt, use_container_width=True)
 
@@ -184,15 +153,21 @@ st.subheader("📈 Curva S — Avance Acumulado del Proyecto")
 
 curva_df = generar_curva_s(resultado.eventos_replica_base)
 if not curva_df.empty:
-    fig_s = px.area(
+    fig_s = px.line(
         curva_df, x="tiempo_h", y="avance_pct",
         labels={"tiempo_h": "Tiempo (h)", "avance_pct": "Pilotes completados (%)"},
-        color_discrete_sequence=["#2E6DA4"],
+        color_discrete_sequence=["#3b82f6"],
     )
+    # Llenado de área más limpio
+    fig_s.update_traces(fill="tozeroy", fillcolor="rgba(59, 130, 246, 0.2)", line=dict(width=3))
     fig_s.update_layout(
-        plot_bgcolor="white", height=300,
+        plot_bgcolor="rgba(0,0,0,0)",
+        paper_bgcolor="rgba(0,0,0,0)",
+        height=300,
         margin=dict(t=20, b=40),
-        yaxis=dict(range=[0, 105]),
+        yaxis=dict(range=[0, 105], showgrid=True, gridcolor="rgba(128,128,128,0.2)"),
+        xaxis=dict(showgrid=False),
+        font=dict(family="Inter, sans-serif")
     )
     st.plotly_chart(fig_s, use_container_width=True)
 

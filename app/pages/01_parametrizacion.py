@@ -9,19 +9,6 @@ from datetime import datetime
 
 from core.models.parametros import ParametrosEntrada, TipoSuelo, TipoDistribucion
 
-st.markdown("""
-<style>
-    .section-header {
-        background: rgba(30, 58, 95, 0.9);
-        color: white;
-        padding: 0.6rem 1rem;
-        border-radius: 6px;
-        margin: 1rem 0 0.5rem;
-        font-weight: 600;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-</style>
-""", unsafe_allow_html=True)
 
 
 st.title("📋 Módulo 1 — Parametrización Operativa")
@@ -67,7 +54,7 @@ with st.form("form_parametros", clear_on_submit=False):
     tab1, tab2, tab3, tab4 = st.tabs(["📐 Geometría", "🌍 Entorno & Logística", "📊 Estocásticos", "💾 Guardar Escenario"])
     
     with tab1:
-        st.markdown('<div class="section-header">Dimensiones y Cantidades</div>', unsafe_allow_html=True)
+        st.subheader("Dimensiones y Cantidades")
         c1, c2, c3 = st.columns(3)
         with c1:
             diametro = st.number_input("Diámetro del pilote (m)", 0.3, 2.0,
@@ -81,7 +68,7 @@ with st.form("form_parametros", clear_on_submit=False):
                                        value=prev.get("cantidad_pilotes", 20))
 
     with tab2:
-        st.markdown('<div class="section-header">Condiciones del Terreno</div>', unsafe_allow_html=True)
+        st.subheader("Condiciones del Terreno")
         c4, c5 = st.columns(2)
         with c4:
             tipo_suelo_vals = [e.value for e in TipoSuelo]
@@ -96,7 +83,7 @@ with st.form("form_parametros", clear_on_submit=False):
         with c5:
             uso_lodo = st.checkbox("Uso de lodo bentonítico", value=prev.get("uso_lodo_bentonitico", True))
 
-        st.markdown('<div class="section-header">Logística de Suministro</div>', unsafe_allow_html=True)
+        st.subheader("Logística de Suministro")
         c6, c7, c8 = st.columns(3)
         with c6:
             num_mixers = st.slider("Número de mixers", 1, 10, value=prev.get("num_mixers", 2))
@@ -108,7 +95,7 @@ with st.form("form_parametros", clear_on_submit=False):
                                         value=prev.get("velocidad_transporte_kmh", 60.0))
 
     with tab3:
-        st.markdown('<div class="section-header">Tiempos de Perforación</div>', unsafe_allow_html=True)
+        st.subheader("Tiempos de Perforación")
         c9, c10, c11 = st.columns(3)
         with c9:
             t_perf_media = st.number_input("Media tiempo perforación (h)", 0.5, 47.9,
@@ -121,7 +108,7 @@ with st.form("form_parametros", clear_on_submit=False):
                                      index=0, key="dist_perf",
                                      help="Lognormal recomendada para tiempos de construcción")
 
-        st.markdown('<div class="section-header">Tiempos de Colado de Concreto</div>', unsafe_allow_html=True)
+        st.subheader("Tiempos de Colado de Concreto")
         c12, c13 = st.columns(2)
         with c12:
             t_colado_media = st.number_input("Media tiempo colado (h)", 0.5, 23.9,
@@ -131,7 +118,7 @@ with st.form("form_parametros", clear_on_submit=False):
                                        index=1, key="dist_colado")
 
     with tab4:
-        st.markdown('<div class="section-header">🏷️ Metadatos y Guardado</div>', unsafe_allow_html=True)
+        st.subheader("🏷️ Metadatos y Guardado")
         nombre_esc = st.text_input("Nombre del escenario", value=prev.get("nombre_escenario", "Escenario Base"))
         notas = st.text_area("Notas / Observaciones", value=prev.get("notas", ""), height=80)
 

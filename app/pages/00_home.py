@@ -1,12 +1,7 @@
 import streamlit as st
 
-# --- Header ---
-st.markdown("""
-<div class="main-header">
-    <h1>🏗️ EMCA — Sistema de Planificación de Pilotes</h1>
-    <p>Sistema de Información Estocástico | Apoyo a la Toma de Decisiones Gerenciales</p>
-</div>
-""", unsafe_allow_html=True)
+st.title("🏗️ LOGISTICS Control Tower")
+st.caption("EMCA Sistema Estocástico | Apoyo a la Toma de Decisiones Gerenciales")
 
 # --- Navegación visual ---
 col1, col2, col3 = st.columns(3)

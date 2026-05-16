@@ -11,120 +11,143 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# --- CSS personalizado Premium (Soporte Light/Dark Mode) ---
+# --- CSS personalizado Premium (Estilo Lumina/Logistics SaaS) ---
 st.markdown("""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
     html, body, [class*="css"] {
-        font-family: 'Outfit', sans-serif;
+        font-family: 'Inter', sans-serif;
     }
 
-    /* Header Principal Glassmorphism */
-    .main-header {
-        background: linear-gradient(135deg, rgba(30, 58, 95, 0.9) 0%, rgba(46, 109, 164, 0.9) 100%);
-        backdrop-filter: blur(10px);
-        padding: 2.5rem 2rem;
-        border-radius: 16px;
-        margin-bottom: 2.5rem;
-        color: white;
-        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-    }
-
-    .main-header h1 { 
-        color: white; 
-        margin: 0; 
-        font-size: 2.5rem; 
-        font-weight: 700;
-        letter-spacing: -0.5px;
-    }
-    .main-header p  { 
-        color: rgba(255,255,255,0.85); 
-        margin: 0.8rem 0 0; 
-        font-size: 1.1rem; 
-        font-weight: 300;
-    }
-
-    /* Tarjetas de Navegación (Adaptables al Tema) */
-    .nav-card {
+    /* Fondo principal muy sutil para dar contraste a las tarjetas */
+    .stApp {
         background-color: var(--secondary-background-color);
+    }
+
+    /* Tarjetas de Navegación */
+    .nav-card {
+        background-color: var(--background-color);
         color: var(--text-color);
-        border: 1px solid rgba(128, 128, 128, 0.2);
+        border: 1px solid rgba(128, 128, 128, 0.15);
         border-radius: 16px;
         padding: 1.8rem;
         margin: 0.5rem 0;
         height: 100%;
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.03);
     }
     
     .nav-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 12px 20px rgba(0,0,0,0.15);
-        border-color: #3b82f6;
+        transform: translateY(-4px);
+        box-shadow: 0px 12px 24px rgba(0, 0, 0, 0.08);
+        border-color: #27ae60;
     }
 
     .nav-card h3 {
         color: var(--text-color);
         margin-top: 0;
-        font-weight: 600;
+        font-weight: 700;
+        font-size: 1.15rem;
     }
     .nav-card h4 {
-        color: #3b82f6;
-        font-size: 1rem;
-        font-weight: 500;
+        color: #2ecc71;
+        font-size: 0.95rem;
+        font-weight: 600;
         margin-bottom: 1rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
     }
     .nav-card p {
         color: var(--text-color);
-        opacity: 0.8;
+        opacity: 0.75;
         line-height: 1.6;
-        font-size: 0.95rem;
+        font-size: 0.9rem;
     }
 
-    /* Botones Premium */
+    /* Estilo de métricas (st.metric) unificado al diseño de tarjetas */
+    div[data-testid="metric-container"] {
+        background-color: var(--background-color);
+        border: 1px solid rgba(128, 128, 128, 0.15);
+        padding: 1.5rem;
+        border-radius: 16px;
+        box-shadow: 0px 4px 15px rgba(0,0,0,0.03);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        border-left: 6px solid #2ecc71; /* Acento verde/azulado sutil */
+    }
+    div[data-testid="metric-container"] > div {
+        color: var(--text-color);
+    }
+    div[data-testid="metric-container"]:hover {
+        transform: translateY(-3px);
+        box-shadow: 0px 8px 20px rgba(0,0,0,0.08);
+    }
+
+    /* Botones estilo SaaS (pills redondos y limpios) */
     .stButton > button {
-        background: linear-gradient(135deg, #2563eb, #1d4ed8);
+        background: #27ae60;
         color: white;
         border: none;
-        border-radius: 10px;
+        border-radius: 24px; /* Pill shape */
         font-weight: 600;
+        font-size: 0.95rem;
         letter-spacing: 0.3px;
-        padding: 0.6rem 1.5rem;
+        padding: 0.5rem 1.5rem;
         transition: all 0.2s ease;
-        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+        box-shadow: 0 4px 12px rgba(39, 174, 96, 0.25);
     }
 
     .stButton > button:hover {
         transform: translateY(-2px);
-        box-shadow: 0 6px 16px rgba(37, 99, 235, 0.35);
-        background: linear-gradient(135deg, #3b82f6, #2563eb);
+        box-shadow: 0 6px 16px rgba(39, 174, 96, 0.4);
+        background: #2ecc71;
         color: white;
     }
     
-    /* Pestañas (Tabs) estilizdas (Adaptables) */
+    /* Pestañas (Tabs) estilo Segmented Control Lumina */
     .stTabs [data-baseweb="tab-list"] {
-        gap: 8px;
+        background-color: rgba(128, 128, 128, 0.05);
+        border-radius: 12px;
+        padding: 4px;
+        gap: 4px;
     }
     .stTabs [data-baseweb="tab"] {
-        border-radius: 8px 8px 0 0;
-        padding: 10px 20px;
+        border-radius: 8px;
+        padding: 8px 20px;
         background-color: transparent;
+        transition: all 0.2s ease;
     }
     .stTabs [aria-selected="true"] {
-        background-color: var(--secondary-background-color) !important;
-        border-bottom: 2px solid #2563eb !important;
+        background-color: var(--background-color) !important;
         color: var(--text-color) !important;
         font-weight: 600;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.08);
+        border-bottom: none !important;
     }
 
-    /* Barra Lateral Premium */
-    [data-testid="stSidebar"] {
-        border-right: 1px solid rgba(128, 128, 128, 0.2);
-        box-shadow: 2px 0 10px rgba(0,0,0,0.05);
+    /* Títulos limpios */
+    h1, h2 {
+        font-weight: 700;
+        letter-spacing: -0.5px;
     }
     
+    /* Alerta logística roja rediseñada */
+    .alerta-roja {
+        background-color: rgba(239, 68, 68, 0.08);
+        border: 1px solid rgba(239, 68, 68, 0.3);
+        border-left: 6px solid #ef4444;
+        border-radius: 16px;
+        padding: 1.5rem;
+        color: var(--text-color);
+        font-weight: 500;
+        box-shadow: 0 4px 15px rgba(239, 68, 68, 0.05);
+    }
+
+    /* Barra lateral */
+    [data-testid="stSidebar"] {
+        background-color: var(--background-color);
+        border-right: 1px solid rgba(128, 128, 128, 0.1);
+    }
     [data-testid="stSidebarNav"] {
         padding-top: 2rem;
     }
