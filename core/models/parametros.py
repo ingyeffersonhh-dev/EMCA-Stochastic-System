@@ -16,20 +16,14 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 # ---------------------------------------------------------------------------
 
 class TipoSuelo(str, Enum):
-    ARCILLA_BLANDA = "arcilla_blanda"
-    ARCILLA_DURA = "arcilla_dura"
-    ARENA_SUELTA = "arena_suelta"
-    ARENA_DENSA = "arena_densa"
-    ROCA_BLANDA = "roca_blanda"
+    SUELO_SECO = "suelo_seco"
+    SUELO_AGUA = "suelo_agua"
 
     @property
     def label(self) -> str:
         labels = {
-            "arcilla_blanda": "Arcilla Blanda",
-            "arcilla_dura": "Arcilla Dura",
-            "arena_suelta": "Arena Suelta",
-            "arena_densa": "Arena Densa",
-            "roca_blanda": "Roca Blanda",
+            "suelo_seco": "Suelo Seco",
+            "suelo_agua": "Suelo con Presencia de Agua",
         }
         return labels[self.value]
 
@@ -37,11 +31,8 @@ class TipoSuelo(str, Enum):
     def factor_dificultad(self) -> float:
         """Factor multiplicador del tiempo de perforación según tipo de suelo."""
         factores = {
-            "arcilla_blanda": 0.85,
-            "arcilla_dura": 1.20,
-            "arena_suelta": 0.90,
-            "arena_densa": 1.10,
-            "roca_blanda": 1.50,
+            "suelo_seco": 1.0,
+            "suelo_agua": 1.35,
         }
         return factores[self.value]
 
@@ -79,7 +70,7 @@ class ParametrosEntrada(BaseModel):
 
     # --- Condiciones del entorno ---
     tipo_suelo: TipoSuelo = Field(
-        ..., description="Clasificación geotécnica del suelo"
+        ..., description="Condición del suelo: seco o con presencia de agua"
     )
     uso_lodo_bentonitico: bool = Field(
         default=True,
@@ -95,37 +86,47 @@ class ParametrosEntrada(BaseModel):
         ..., gt=0.0, lt=200.0,
         description="Distancia a la planta de concreto en kilómetros"
     )
-    velocidad_transporte_kmh: float = Field(
+    velocidad_transporte_kmh_media: float = Field(
         default=60.0, gt=10.0, lt=120.0,
-        description="Velocidad promedio de los mixers en tránsito"
+        description="Velocidad promedio de los mixers en tránsito (km/h)"
+    )
+    velocidad_transporte_kmh_std: float = Field(
+        default=10.0, gt=0.0,
+        description="Desviación estándar de la velocidad de transporte (km/h)"
     )
 
-    # --- Parámetros estocásticos: Perforación ---
-    tiempo_perforacion_h_media: float = Field(
-        ..., gt=0.0, lt=48.0,
-        description="Tiempo promedio de perforación por pilote (horas)"
+    # --- Parámetros estocásticos: Perforación (en minutos) ---
+    tiempo_perforacion_min_media: float = Field(
+        ..., gt=0.0, lt=2880.0,
+        description="Tiempo promedio de perforación por pilote (minutos)"
     )
-    tiempo_perforacion_h_std: float = Field(
+    tiempo_perforacion_min_std: float = Field(
         ..., gt=0.0,
-        description="Desviación estándar del tiempo de perforación (horas)"
+        description="Desviación estándar del tiempo de perforación (minutos)"
     )
     dist_perforacion: TipoDistribucion = Field(
         default=TipoDistribucion.LOGNORMAL,
         description="Distribución estadística para el tiempo de perforación"
     )
 
-    # --- Parámetros estocásticos: Colado ---
-    tiempo_colado_h_media: float = Field(
-        ..., gt=0.0, lt=24.0,
-        description="Tiempo promedio de colado de concreto por pilote (horas)"
+    # --- Parámetros estocásticos: Colado (en minutos) ---
+    tiempo_colado_min_media: float = Field(
+        ..., gt=0.0, lt=1440.0,
+        description="Tiempo promedio de colado de concreto por pilote (minutos)"
     )
-    tiempo_colado_h_std: Optional[float] = Field(
+    tiempo_colado_min_std: Optional[float] = Field(
         default=None,
         description="Desviación estándar del colado (usa media/4 si no se especifica)"
     )
     dist_colado: TipoDistribucion = Field(
         default=TipoDistribucion.EXPONENTIAL,
         description="Distribución estadística para el tiempo de colado"
+    )
+
+    # --- Configuración de jornada laboral ---
+    horas_por_dia: float = Field(
+        default=8.0, gt=0.0, lt=24.0,
+        description="Horas de trabajo por día"
     )
 
     # --- Metadatos del escenario ---
@@ -143,28 +144,26 @@ class ParametrosEntrada(BaseModel):
     # Validadores
     # ---------------------------------------------------------------------------
 
-    @field_validator("tiempo_perforacion_h_std")
+    @field_validator("tiempo_perforacion_min_std")
     @classmethod
-    def std_coherente(cls, v: float, info) -> float:
+    def std_perf_coherente(cls, v: float, info) -> float:
         data = info.data
-        if "tiempo_perforacion_h_media" in data:
-            media = data["tiempo_perforacion_h_media"]
+        if "tiempo_perforacion_min_media" in data:
+            media = data["tiempo_perforacion_min_media"]
             if v >= media:
                 raise ValueError(
-                    f"La desviación estándar ({v:.2f}h) no puede ser ≥ la media ({media:.2f}h). "
-                    "Verifique los valores ingresados."
+                    f"La desviación estándar ({v:.0f} min) no puede ser ≥ la media ({media:.0f} min)."
                 )
             if v / media > 0.6:
                 raise ValueError(
-                    f"Coeficiente de variación ({v/media:.0%}) excede 60%. "
-                    "Revise la estimación; los datos pueden ser inconsistentes."
+                    f"Coeficiente de variación ({v/media:.0%}) excede 60%."
                 )
         return v
 
     @model_validator(mode="after")
     def completar_std_colado(self) -> "ParametrosEntrada":
-        if self.tiempo_colado_h_std is None:
-            self.tiempo_colado_h_std = self.tiempo_colado_h_media / 4.0
+        if self.tiempo_colado_min_std is None:
+            self.tiempo_colado_min_std = self.tiempo_colado_min_media / 4.0
         return self
 
     # ---------------------------------------------------------------------------
@@ -183,13 +182,39 @@ class ParametrosEntrada(BaseModel):
         return self.volumen_pilote_m3 * self.cantidad_pilotes
 
     @property
+    def tiempo_perforacion_h_media(self) -> float:
+        """Tiempo promedio de perforación en horas (compatibilidad)."""
+        return self.tiempo_perforacion_min_media / 60.0
+
+    @property
+    def tiempo_perforacion_h_std(self) -> float:
+        """Desviación estándar de perforación en horas (compatibilidad)."""
+        return self.tiempo_perforacion_min_std / 60.0
+
+    @property
+    def tiempo_colado_h_media(self) -> float:
+        """Tiempo promedio de colado en horas (compatibilidad)."""
+        return self.tiempo_colado_min_media / 60.0
+
+    @property
+    def tiempo_colado_h_std(self) -> float:
+        """Desviación estándar de colado en horas (compatibilidad)."""
+        return self.tiempo_colado_min_std / 60.0
+
+    @property
     def tiempo_transporte_h(self) -> float:
         """Tiempo de viaje ida + vuelta del mixer (horas)."""
-        return (self.distancia_proveedor_km / self.velocidad_transporte_kmh) * 2
+        return (self.distancia_proveedor_km / self.velocidad_transporte_kmh_media) * 2
 
     @property
     def tiempo_perforacion_ajustado_media(self) -> float:
-        """Media de perforación ajustada por el factor de dificultad del suelo."""
+        """Media de perforación ajustada por el factor de dificultad del suelo (horas)."""
         return self.tiempo_perforacion_h_media * self.tipo_suelo.factor_dificultad
+
+    @property
+    def dias_estimados(self) -> float:
+        """Días estimados de trabajo basado en horas por día."""
+        tiempo_total_h = self.tiempo_perforacion_ajustado_media + self.tiempo_colado_h_media + self.tiempo_transporte_h / self.num_mixers
+        return (tiempo_total_h * self.cantidad_pilotes) / self.horas_por_dia
 
     model_config = ConfigDict(use_enum_values=False)

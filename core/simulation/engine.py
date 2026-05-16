@@ -83,26 +83,40 @@ def ejecutar_simulacion(
     )
 
     # --- Pre-generar todas las muestras aleatorias (vectorizado) ---
-    t_perf_ajustada = params.tiempo_perforacion_ajustado_media
-    t_perf_std = params.tiempo_perforacion_h_std
+    # Tiempos en horas para el motor SimPy
+    t_perf_ajustada_h = params.tiempo_perforacion_ajustado_media
+    t_perf_std_h = params.tiempo_perforacion_h_std
+    t_colado_media_h = params.tiempo_colado_h_media
+    t_colado_std_h = params.tiempo_colado_h_std
 
     t_perforaciones = generar_muestras(
         params.dist_perforacion.value,
-        media=t_perf_ajustada,
-        std=t_perf_std,
+        media=t_perf_ajustada_h,
+        std=t_perf_std_h,
         n=params.cantidad_pilotes * n_replicas,
         seed=seed,
     ).reshape(n_replicas, params.cantidad_pilotes)
 
     t_colados = generar_muestras(
         params.dist_colado.value,
-        media=params.tiempo_colado_h_media,
-        std=params.tiempo_colado_h_std,
+        media=t_colado_media_h,
+        std=t_colado_std_h,
         n=params.cantidad_pilotes * n_replicas,
         seed=seed + 1,
     ).reshape(n_replicas, params.cantidad_pilotes)
 
-    t_transporte = params.tiempo_transporte_h
+    # Tiempo de transporte con velocidad variable (distribución normal)
+    t_transporte_base = params.tiempo_transporte_h
+    # Generar variabilidad de transporte basada en velocidad
+    t_transportes = generar_muestras(
+        "normal",
+        media=t_transporte_base,
+        std=t_transporte_base * (params.velocidad_transporte_kmh_std / params.velocidad_transporte_kmh_media),
+        n=params.cantidad_pilotes * n_replicas,
+        seed=seed + 2,
+    ).reshape(n_replicas, params.cantidad_pilotes)
+    # Asegurar que los tiempos de transporte sean positivos
+    t_transportes = np.maximum(t_transportes, 0.1)
 
     # --- Bucle de réplicas ---
     tiempos_proyecto: List[float] = []
@@ -121,7 +135,7 @@ def ejecutar_simulacion(
                 _proceso_pilote(
                     env, i, mixer_resource,
                     t_perforaciones[r, i],
-                    t_transporte,
+                    t_transportes[r, i],
                     t_colados[r, i],
                     log_replica,
                 )

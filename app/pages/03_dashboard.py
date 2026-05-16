@@ -49,58 +49,24 @@ if kpis is None:
     st.stop()
 
 # ===========================================================================
-# SECCIÓN 0: Header con Insights Automáticos
+# SECCIÓN 0: Resumen rápido
 # ===========================================================================
-insights = []
+horas_dia = params.horas_por_dia if params and hasattr(params, 'horas_por_dia') else 8.0
+dias_p50 = kpis.tiempo_proyecto_p50_h / horas_dia
+dias_p90 = kpis.tiempo_proyecto_p90_h / horas_dia
+
+# KPI Cards principales en una fila
+col1, col2, col3, col4 = st.columns(4)
+col1.metric("⏱️ Duración P50", f"{kpis.tiempo_proyecto_p50_h:.1f} h", f"{dias_p50:.1f} días")
+col2.metric("📈 Duración P90", f"{kpis.tiempo_proyecto_p90_h:.1f} h", f"{dias_p90:.1f} días")
+col3.metric("🔧 Utilización Mixer", f"{kpis.utilizacion_mixer_pct:.0f}%")
+col4.metric("⚡ Cuello de botella", kpis.cuello_botella)
+
+# Alertas compactas
 if kpis.alerta_logistica:
-    insights.append(f"🚨 **Cuello de botella logístico**: Los mixers esperan en promedio {kpis.tiempo_espera_mixer_promedio_h:.2f}h. Considere aumentar la flota de {params.num_mixers} a {params.num_mixers + 1} unidades.")
-if kpis.utilizacion_mixer_pct > 85:
-    insights.append(f"⚠️ **Alta utilización de mixer** ({kpis.utilizacion_mixer_pct:.0f}%): El sistema de suministro está cerca de la saturación.")
-if kpis.cuello_botella == "Perforadora":
-    insights.append(f"🔧 **La perforadora es el cuello de botella**: El tiempo de perforación ({params.tiempo_perforacion_ajustado_media:.1f}h/pilote) domina la duración total.")
-elif kpis.cuello_botella == "Mixer":
-    insights.append(f"🚛 **El mixer es el cuello de botella**: La logística de suministro no acompaña el ritmo de perforación.")
-
-insights.append(f"📊 **Confianza P90**: Con 90% de probabilidad, el proyecto se completará en {kpis.tiempo_proyecto_p90_h:.1f}h ({kpis.dias_p50:.1f} días).")
-
-if insights:
-    st.markdown('<div class="insight-header">', unsafe_allow_html=True)
-    st.markdown("### 💡 Insights Automáticos")
-    for insight in insights:
-        st.markdown(f"- {insight}")
-    st.markdown('</div>', unsafe_allow_html=True)
-
-# ===========================================================================
-# SECCIÓN 1: KPI Cards
-# ===========================================================================
-st.subheader("📌 Indicadores Clave del Proyecto")
-
-col1, col2, col3, col4, col5 = st.columns(5)
-col1.metric("⏱️ Duración P10", f"{kpis.tiempo_proyecto_p10_h:.1f} h", help="Escenario optimista (10% de probabilidad de terminar antes)")
-col2.metric("📊 Duración P50", f"{kpis.tiempo_proyecto_p50_h:.1f} h", help="Mediana — estimación central")
-col3.metric("📈 Duración P90", f"{kpis.tiempo_proyecto_p90_h:.1f} h", help="Escenario conservador (90% de confianza)")
-col4.metric("📅 Duración P50", f"{kpis.dias_p50:.1f} días", delta=f"{kpis.semanas_p50:.1f} semanas")
-col5.metric("🔧 Utilización Mixer", f"{kpis.utilizacion_mixer_pct:.0f}%")
-
-col6, col7, col8 = st.columns(3)
-col6.metric("🔄 Ciclo promedio/pilote", f"{kpis.tiempo_ciclo_promedio_h:.2f} h")
-col7.metric("⏳ Espera mixer promedio", f"{kpis.tiempo_espera_mixer_promedio_h:.2f} h")
-col8.metric("⚡ Cuello de botella", kpis.cuello_botella)
-
-# Alertas
-if kpis.alerta_logistica or kpis.alerta_capacidad_mixer:
-    st.markdown("<br>", unsafe_allow_html=True)
-    if kpis.alerta_logistica:
-        st.markdown(f"""<div class="alerta-roja">
-            🚨 ALERTA LOGÍSTICA: Espera promedio del mixer = {kpis.tiempo_espera_mixer_promedio_h:.2f}h
-            (máx: {kpis.tiempo_espera_mixer_max_h:.2f}h). Umbral crítico: 2.0h.
-            Recomendación: Aumentar flota de mixers o contratar proveedor más cercano.
-        </div>""", unsafe_allow_html=True)
-    if kpis.alerta_capacidad_mixer:
-        st.markdown(f"""<div class="alerta-roja" style="margin-top:0.5rem">
-            ⚠️ ALTA UTILIZACIÓN DE MIXER: {kpis.utilizacion_mixer_pct:.0f}% (umbral: 85%).
-            El sistema de suministro de concreto está saturado.
-        </div>""", unsafe_allow_html=True)
+    st.error(f"🚨 **Alerta logística**: Espera mixer promedio = {kpis.tiempo_espera_mixer_promedio_h:.2f}h (>2.0h). Considere aumentar flota.")
+if kpis.alerta_capacidad_mixer:
+    st.warning(f"⚠️ **Alta utilización mixer**: {kpis.utilizacion_mixer_pct:.0f}% (>85%). Sistema cerca de saturación.")
 
 st.divider()
 
@@ -215,102 +181,52 @@ if not curva_df.empty:
 st.divider()
 
 # ===========================================================================
-# SECCIÓN 5: Radar Chart de Utilización de Recursos
+# SECCIÓN 5: Radar + Tornado (lado a lado)
 # ===========================================================================
-st.subheader("🎯 Radar de Eficiencia del Sistema")
+col_radar, col_tornado = st.columns(2)
 
-# Calcular métricas para el radar
-t_perf_total = sum(e.tiempo_perforacion_h for e in resultado.eventos_replica_base)
-t_colado_total = sum(e.tiempo_colado_h for e in resultado.eventos_replica_base)
-t_espera_total = sum(e.tiempo_espera_mixer_h for e in resultado.eventos_replica_base)
-t_ciclo_total = t_perf_total + t_colado_total + t_espera_total
+with col_radar:
+    st.subheader("🎯 Radar de Eficiencia")
+    t_perf_total = sum(e.tiempo_perforacion_h for e in resultado.eventos_replica_base)
+    t_colado_total = sum(e.tiempo_colado_h for e in resultado.eventos_replica_base)
+    t_espera_total = sum(e.tiempo_espera_mixer_h for e in resultado.eventos_replica_base)
+    t_ciclo_total = t_perf_total + t_colado_total + t_espera_total
 
-eficiencia_perf = (t_perf_total / t_ciclo_total * 100) if t_ciclo_total > 0 else 0
-eficiencia_colado = (t_colado_total / t_ciclo_total * 100) if t_ciclo_total > 0 else 0
-eficiencia_logistica = max(0, 100 - (t_espera_total / t_ciclo_total * 100)) if t_ciclo_total > 0 else 0
-utilizacion_mixer = kpis.utilizacion_mixer_pct
-riesgo = max(0, 100 - kpis.tiempo_proyecto_std_h / max(kpis.tiempo_proyecto_p50_h, 0.01) * 100)
+    eficiencia_perf = (t_perf_total / t_ciclo_total * 100) if t_ciclo_total > 0 else 0
+    eficiencia_colado = (t_colado_total / t_ciclo_total * 100) if t_ciclo_total > 0 else 0
+    eficiencia_logistica = max(0, 100 - (t_espera_total / t_ciclo_total * 100)) if t_ciclo_total > 0 else 0
+    utilizacion_mixer = kpis.utilizacion_mixer_pct
+    predictibilidad = max(0, 100 - kpis.tiempo_proyecto_std_h / max(kpis.tiempo_proyecto_p50_h, 0.01) * 100)
 
-fig_radar = go.Figure()
-fig_radar.add_trace(go.Scatterpolar(
-    r=[eficiencia_perf, eficiencia_colado, eficiencia_logistica, utilizacion_mixer, riesgo],
-    theta=["Eficiencia\nPerforación", "Eficiencia\nColado", "Eficiencia\nLogística", "Utilización\nMixer", "Predictibilidad\n(Baja varianza)"],
-    fill="toself",
-    fillcolor="rgba(59, 130, 246, 0.2)",
-    line_color="#3b82f6",
-    line_width=2,
-    name="Escenario Actual"
-))
-
-fig_radar.update_layout(
-    polar=dict(
-        radialaxis=dict(visible=True, range=[0, 100], showgrid=True, gridcolor="rgba(128,128,128,0.2)"),
-        angularaxis=dict(showgrid=True, gridcolor="rgba(128,128,128,0.15)"),
-    ),
-    plot_bgcolor="rgba(0,0,0,0)",
-    paper_bgcolor="rgba(0,0,0,0)",
-    height=400,
-    showlegend=False,
-    font=dict(family="Inter, sans-serif"),
-    margin=dict(t=40, b=40),
-)
-st.plotly_chart(fig_radar, use_container_width=True)
-
-st.divider()
-
-# ===========================================================================
-# SECCIÓN 6: Gráfico de Tornado (Análisis de Sensibilidad)
-# ===========================================================================
-st.subheader("🌪️ Análisis de Sensibilidad — Diagrama de Tornado")
-
-st.caption("Muestra qué parámetros tienen mayor impacto en la duración del proyecto (índice de sensibilidad total Sobol)")
-
-# Usar datos simulados si SALib no está disponible, o calcular con variación simple
-if tiempos and len(tiempos) > 100:
-    # Análisis simplificado basado en correlación de parámetros
-    params_sensibilidad = {
-        "T. Perforación": 0.35,
-        "T. Colado": 0.25,
-        "N° Mixers": 0.20,
-        "Distancia Proveedor": 0.12,
-        "Tipo de Suelo": 0.08,
-    }
-    
-    # Crear tornado chart
-    categorias = list(params_sensibilidad.keys())
-    valores = list(params_sensibilidad.values())
-    
-    fig_tornado = go.Figure()
-    
-    # Barras positivas (impacto alto)
-    fig_tornado.add_trace(go.Bar(
-        y=categorias,
-        x=valores,
-        orientation='h',
-        marker=dict(
-            color=valores,
-            colorscale='RdYlGn_r',
-            colorbar=dict(title="Índice\nSensibilidad"),
-        ),
-        text=[f"{v:.0%}" for v in valores],
-        textposition='outside',
-        textfont=dict(color='var(--text-primary)', size=12),
+    fig_radar = go.Figure()
+    fig_radar.add_trace(go.Scatterpolar(
+        r=[eficiencia_perf, eficiencia_colado, eficiencia_logistica, utilizacion_mixer, predictibilidad],
+        theta=["Perforación", "Colado", "Logística", "Mixer", "Predictibilidad"],
+        fill="toself", fillcolor="rgba(59, 130, 246, 0.15)",
+        line_color="#3b82f6", line_width=2,
     ))
-    
+    fig_radar.update_layout(
+        polar=dict(radialaxis=dict(visible=True, range=[0, 100])),
+        height=320, showlegend=False, margin=dict(t=20, b=20),
+    )
+    st.plotly_chart(fig_radar, use_container_width=True)
+
+with col_tornado:
+    st.subheader("🌪️ Sensibilidad")
+    params_sens = {"Perforación": 0.35, "Colado": 0.25, "Mixers": 0.20, "Distancia": 0.12, "Suelo": 0.08}
+    fig_tornado = go.Figure()
+    fig_tornado.add_trace(go.Bar(
+        y=list(params_sens.keys()), x=list(params_sens.values()), orientation='h',
+        marker=dict(color=list(params_sens.values()), colorscale='RdYlGn_r'),
+        text=[f"{v:.0%}" for v in params_sens.values()], textposition='outside',
+    ))
     fig_tornado.update_layout(
-        xaxis_title="Índice de Sensibilidad (ST)",
-        yaxis=dict(autorange="reversed"),
-        plot_bgcolor="rgba(0,0,0,0)",
-        paper_bgcolor="rgba(0,0,0,0)",
-        height=300,
-        margin=dict(t=20, b=40, l=140),
-        xaxis=dict(showgrid=True, gridcolor="rgba(128,128,128,0.2)", range=[0, max(valores) * 1.3]),
-        font=dict(family="Inter, sans-serif"),
-        showlegend=False,
+        yaxis=dict(autorange="reversed"), height=320, margin=dict(t=20, b=40, l=90),
+        xaxis=dict(range=[0, 0.5]), showlegend=False,
     )
     st.plotly_chart(fig_tornado, use_container_width=True)
-    
-    st.info(f"💡 **Parámetro más influyente**: {categorias[0]} ({valores[0]:.0%}). Enfocar optimizaciones en reducir la variabilidad de este parámetro.")
+
+st.divider()
 
 st.divider()
 
@@ -468,64 +384,43 @@ else:
 st.divider()
 
 # ===========================================================================
-# SECCIÓN 9: Exportar a Excel
+# SECCIÓN 9: Exportar
 # ===========================================================================
-st.subheader("📥 Exportar Resultados")
-
 col_exp1, col_exp2 = st.columns(2)
 with col_exp1:
-    if st.button("📊 Descargar Reporte Excel", use_container_width=True, type="secondary"):
-        with st.spinner("Generando Excel..."):
+    if st.button("📊 Descargar Excel", use_container_width=True, type="secondary"):
+        with st.spinner("Generando..."):
             ruta = exportar_excel(resultado, directorio="exports")
         with open(ruta, "rb") as f:
             st.download_button(
-                label="⬇️ Descargar archivo Excel",
-                data=f.read(),
+                label="⬇️ Excel", data=f.read(),
                 file_name=ruta.split("\\")[-1].split("/")[-1],
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                 use_container_width=True,
             )
-        st.success(f"✅ Reporte generado: `{ruta}`")
 
 with col_exp2:
-    if st.button("📄 Descargar Resumen PDF", use_container_width=True, type="secondary"):
-        # Generar resumen en texto para descargar
-        resumen_text = f"""
-EMCA — Reporte de Simulación
-=============================
+    horas_dia_exp = params.horas_por_dia if params and hasattr(params, 'horas_por_dia') else 8.0
+    resumen = f"""EMCA - Reporte de Simulación
 Escenario: {params.nombre_escenario if params else 'N/A'}
 Fecha: {pd.Timestamp.now().strftime('%d/%m/%Y %H:%M')}
 
-RESUMEN DE KPIs
----------------
-Duración P10: {kpis.tiempo_proyecto_p10_h:.1f} h
-Duración P50: {kpis.tiempo_proyecto_p50_h:.1f} h ({kpis.dias_p50:.1f} días)
-Duración P90: {kpis.tiempo_proyecto_p90_h:.1f} h
-Desviación Estándar: {kpis.tiempo_proyecto_std_h:.2f} h
+KPIs PRINCIPALES
+Duracion P50: {kpis.tiempo_proyecto_p50_h:.1f}h ({kpis.tiempo_proyecto_p50_h/horas_dia_exp:.1f} dias)
+Duracion P90: {kpis.tiempo_proyecto_p90_h:.1f}h ({kpis.tiempo_proyecto_p90_h/horas_dia_exp:.1f} dias)
+Cuello de botella: {kpis.cuello_botella}
+Utilizacion Mixer: {kpis.utilizacion_mixer_pct:.0f}%
 
-Cuello de Botella: {kpis.cuello_botella}
-Utilización Mixer: {kpis.utilizacion_mixer_pct:.0f}%
-Espera Mixer Promedio: {kpis.tiempo_espera_mixer_promedio_h:.2f} h
-Ciclo Promedio por Pilote: {kpis.tiempo_ciclo_promedio_h:.2f} h
-
-ALERTAS
--------
-{"⚠️ Alerta Logística: Espera mixer > 2.0h" if kpis.alerta_logistica else "✅ Sin alerta logística"}
-{"⚠️ Alta Utilización Mixer > 85%" if kpis.alerta_capacidad_mixer else "✅ Utilización mixer dentro de rango"}
-
-CONFIGURACIÓN
--------------
+CONFIGURACION
 Pilotes: {params.cantidad_pilotes if params else '?'}
 Mixers: {params.num_mixers if params else '?'}
 Distancia: {params.distancia_proveedor_km if params else '?'} km
-Tipo de Suelo: {params.tipo_suelo.label if params and hasattr(params.tipo_suelo, 'label') else '?'}
-Réplicas: {len(resultado.tiempos_proyecto_todas_replicas) if resultado.tiempos_proyecto_todas_replicas else '?'}
-        """.strip()
-        
-        st.download_button(
-            label="⬇️ Descargar resumen en texto",
-            data=resumen_text.encode("utf-8"),
-            file_name=f"EMCA_Resumen_{pd.Timestamp.now().strftime('%Y%m%d_%H%M%S')}.txt",
-            mime="text/plain",
-            use_container_width=True,
-        )
+Jornada: {horas_dia_exp:.0f}h/dia
+"""
+    st.download_button(
+        label="📄 Descargar Reporte",
+        data=resumen.encode("utf-8"),
+        file_name=f"EMCA_{pd.Timestamp.now().strftime('%Y%m%d')}.txt",
+        mime="text/plain",
+        use_container_width=True,
+    )
