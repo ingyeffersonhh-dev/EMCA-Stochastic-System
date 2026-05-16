@@ -17,21 +17,11 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# --- Modo Oscuro / Claro ---
 if "dark_mode" not in st.session_state:
     st.session_state["dark_mode"] = True
 
 def toggle_theme():
     st.session_state["dark_mode"] = not st.session_state["dark_mode"]
-
-dark = st.session_state["dark_mode"]
-
-bg_primary = "#0f172a" if dark else "#f8fafc"
-bg_card = "#1e293b" if dark else "#ffffff"
-text_primary = "#f1f5f9" if dark else "#0f172a"
-text_secondary = "#94a3b8" if dark else "#64748b"
-border = "rgba(148, 163, 184, 0.15)" if dark else "rgba(148, 163, 184, 0.25)"
-shadow = "rgba(0, 0, 0, 0.3)" if dark else "rgba(0, 0, 0, 0.08)"
 
 css = """
 <style>
@@ -42,30 +32,30 @@ css = """
     }
 
     .stApp {
-        background-color: """ + bg_primary + """;
+        background-color: #0f172a;
     }
 
     .nav-card {
-        background-color: """ + bg_card + """;
-        color: """ + text_primary + """;
-        border: 1px solid """ + border + """;
+        background-color: #1e293b;
+        color: #f1f5f9;
+        border: 1px solid rgba(148, 163, 184, 0.15);
         border-radius: 16px;
         padding: 1.8rem;
         margin: 0.5rem 0;
         height: 100%;
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        box-shadow: 0px 4px 15px """ + shadow + """;
+        box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.3);
         cursor: pointer;
     }
 
     .nav-card:hover {
         transform: translateY(-4px);
-        box-shadow: 0px 12px 24px """ + shadow + """;
+        box-shadow: 0px 12px 24px rgba(0, 0, 0, 0.3);
         border-color: #27ae60;
     }
 
     .nav-card h3 {
-        color: """ + text_primary + """;
+        color: #f1f5f9;
         margin-top: 0;
         font-weight: 700;
         font-size: 1.15rem;
@@ -79,26 +69,26 @@ css = """
         letter-spacing: 0.5px;
     }
     .nav-card p {
-        color: """ + text_secondary + """;
+        color: #94a3b8;
         line-height: 1.6;
         font-size: 0.9rem;
     }
 
     div[data-testid="metric-container"] {
-        background-color: """ + bg_card + """;
-        border: 1px solid """ + border + """;
+        background-color: #1e293b;
+        border: 1px solid rgba(148, 163, 184, 0.15);
         padding: 1.5rem;
         border-radius: 16px;
-        box-shadow: 0px 4px 15px """ + shadow + """;
+        box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.3);
         transition: transform 0.2s ease, box-shadow 0.2s ease;
         border-left: 6px solid #27ae60;
     }
     div[data-testid="metric-container"] > div {
-        color: """ + text_primary + """;
+        color: #f1f5f9;
     }
     div[data-testid="metric-container"]:hover {
         transform: translateY(-3px);
-        box-shadow: 0px 8px 20px """ + shadow + """;
+        box-shadow: 0px 8px 20px rgba(0, 0, 0, 0.3);
     }
 
     .stButton > button {
@@ -134,21 +124,15 @@ css = """
         transition: all 0.2s ease;
     }
     .stTabs [aria-selected="true"] {
-        background-color: """ + bg_card + """ !important;
-        color: """ + text_primary + """ !important;
+        background-color: #1e293b !important;
+        color: #f1f5f9 !important;
         font-weight: 600;
-        box-shadow: 0 2px 5px """ + shadow + """;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
         border-bottom: none !important;
     }
 
-    h1, h2 {
-        font-weight: 700;
-        letter-spacing: -0.5px;
-        color: """ + text_primary + """;
-    }
-
-    h3, h4, h5, h6 {
-        color: """ + text_primary + """;
+    h1, h2, h3, h4, h5, h6 {
+        color: #f1f5f9;
     }
 
     .alerta-roja {
@@ -157,7 +141,7 @@ css = """
         border-left: 6px solid #ef4444;
         border-radius: 16px;
         padding: 1.5rem;
-        color: """ + text_primary + """;
+        color: #f1f5f9;
         font-weight: 500;
         box-shadow: 0 4px 15px rgba(239, 68, 68, 0.05);
     }
@@ -168,7 +152,7 @@ css = """
         border-left: 6px solid #3b82f6;
         border-radius: 16px;
         padding: 1.5rem;
-        color: """ + text_primary + """;
+        color: #f1f5f9;
         font-weight: 500;
     }
 
@@ -178,7 +162,7 @@ css = """
         border-left: 6px solid #27ae60;
         border-radius: 16px;
         padding: 1.5rem;
-        color: """ + text_primary + """;
+        color: #f1f5f9;
         font-weight: 500;
     }
 
@@ -188,10 +172,10 @@ css = """
         justify-content: center;
         padding: 1rem 2rem;
         margin-bottom: 1.5rem;
-        background: """ + bg_card + """;
+        background: #1e293b;
         border-radius: 16px;
-        border: 1px solid """ + border + """;
-        box-shadow: 0 4px 15px """ + shadow + """;
+        border: 1px solid rgba(148, 163, 184, 0.15);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
     }
     .stepper-step {
         display: flex;
@@ -201,7 +185,7 @@ css = """
         border-radius: 999px;
         font-weight: 500;
         font-size: 0.85rem;
-        color: """ + text_secondary + """;
+        color: #94a3b8;
         transition: all 0.2s ease;
     }
     .stepper-step.active {
@@ -212,7 +196,7 @@ css = """
         color: #27ae60;
     }
     .stepper-arrow {
-        color: """ + text_secondary + """;
+        color: #94a3b8;
         margin: 0 0.5rem;
         font-size: 1.2rem;
     }
@@ -226,14 +210,14 @@ css = """
         margin: 1rem 0;
     }
     .flow-node {
-        background: """ + bg_card + """;
-        border: 1px solid """ + border + """;
+        background: #1e293b;
+        border: 1px solid rgba(148, 163, 184, 0.15);
         border-radius: 12px;
         padding: 1rem 1.5rem;
         text-align: center;
         font-weight: 600;
-        color: """ + text_primary + """;
-        box-shadow: 0 2px 8px """ + shadow + """;
+        color: #f1f5f9;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
     }
     .flow-arrow {
         font-size: 1.5rem;
@@ -246,9 +230,9 @@ css = """
         align-items: center;
         padding: 0.75rem 1rem;
         border-radius: 12px;
-        border: 1px solid """ + border + """;
+        border: 1px solid rgba(148, 163, 184, 0.15);
         margin: 0.5rem 0;
-        background: """ + bg_card + """;
+        background: #1e293b;
         cursor: pointer;
         transition: all 0.2s ease;
     }
@@ -258,12 +242,12 @@ css = """
     }
     .scenario-name {
         font-weight: 600;
-        color: """ + text_primary + """;
+        color: #f1f5f9;
         font-size: 0.9rem;
     }
     .scenario-date {
         font-size: 0.75rem;
-        color: """ + text_secondary + """;
+        color: #94a3b8;
     }
 
     .soil-indicator {
@@ -280,12 +264,12 @@ css = """
     .soil-hard { background: rgba(231, 76, 60, 0.15); color: #e74c3c; }
 
     .preview-card {
-        background: """ + bg_card + """;
-        border: 1px solid """ + border + """;
+        background: #1e293b;
+        border: 1px solid rgba(148, 163, 184, 0.15);
         border-radius: 16px;
         padding: 1.5rem;
         margin: 1rem 0;
-        box-shadow: 0 4px 15px """ + shadow + """;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
     }
     .preview-card h4 {
         color: #27ae60;
@@ -298,12 +282,12 @@ css = """
         display: flex;
         justify-content: space-between;
         padding: 0.5rem 0;
-        border-bottom: 1px solid """ + border + """;
+        border-bottom: 1px solid rgba(148, 163, 184, 0.15);
         font-size: 0.9rem;
     }
     .preview-row:last-child { border-bottom: none; }
-    .preview-label { color: """ + text_secondary + """; }
-    .preview-value { color: """ + text_primary + """; font-weight: 600; }
+    .preview-label { color: #94a3b8; }
+    .preview-value { color: #f1f5f9; font-weight: 600; }
 
     .progress-stage {
         display: flex;
@@ -312,63 +296,55 @@ css = """
         padding: 0.75rem 1rem;
         margin: 0.5rem 0;
         border-radius: 12px;
-        background: """ + bg_card + """;
-        border: 1px solid """ + border + """;
+        background: #1e293b;
+        border: 1px solid rgba(148, 163, 184, 0.15);
     }
     .progress-stage.active { border-color: #27ae60; }
     .progress-stage.done { border-color: #27ae60; background: rgba(39, 174, 96, 0.08); }
     .progress-icon { font-size: 1.2rem; }
-    .progress-label { font-weight: 500; color: """ + text_primary + """; font-size: 0.9rem; }
+    .progress-label { font-weight: 500; color: #f1f5f9; font-size: 0.9rem; }
 
     .insight-header {
         background: linear-gradient(135deg, rgba(39, 174, 96, 0.1) 0%, rgba(59, 130, 246, 0.1) 100%);
-        border: 1px solid """ + border + """;
+        border: 1px solid rgba(148, 163, 184, 0.15);
         border-radius: 16px;
         padding: 1.5rem 2rem;
         margin-bottom: 1.5rem;
     }
     .insight-header h3 {
-        color: """ + text_primary + """;
+        color: #f1f5f9;
         margin: 0 0 0.5rem;
     }
     .insight-header p {
-        color: """ + text_secondary + """;
+        color: #94a3b8;
         margin: 0;
         line-height: 1.6;
     }
 
     [data-testid="stSidebar"] {
-        background-color: """ + bg_card + """;
-        border-right: 1px solid """ + border + """;
+        background-color: #1e293b;
+        border-right: 1px solid rgba(148, 163, 184, 0.15);
     }
     [data-testid="stSidebarNav"] {
         padding-top: 1rem;
     }
 
-    input, select, textarea {
-        background-color: """ + bg_card + """ !important;
-        color: """ + text_primary + """ !important;
-        border-color: """ + border + """ !important;
-    }
-
     [data-testid="stDataFrame"] {
-        background: """ + bg_card + """;
+        background: #1e293b;
         border-radius: 12px;
-        border: 1px solid """ + border + """;
+        border: 1px solid rgba(148, 163, 184, 0.15);
     }
 </style>
 """
 
 st.markdown(css, unsafe_allow_html=True)
 
-# --- Theme toggle en sidebar ---
 with st.sidebar:
-    theme_icon = "🌙" if dark else "☀️"
-    theme_label = "Modo Claro" if dark else "Modo Oscuro"
+    theme_icon = "🌙" if st.session_state["dark_mode"] else "☀️"
+    theme_label = "Modo Claro" if st.session_state["dark_mode"] else "Modo Oscuro"
     if st.button(f"{theme_icon} {theme_label}", use_container_width=True, type="secondary", on_click=toggle_theme):
         st.rerun()
 
-# --- Configuración de Páginas ---
 pg_home = st.Page("pages/00_home.py", title="Inicio", icon="🏠", default=True)
 pg_param = st.Page("pages/01_parametrizacion.py", title="1. Parametrización", icon="📋")
 pg_sim = st.Page("pages/02_simulacion.py", title="2. Simulación", icon="⚙️")
