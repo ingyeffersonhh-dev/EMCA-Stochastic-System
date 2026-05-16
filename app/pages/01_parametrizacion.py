@@ -110,16 +110,25 @@ with st.form("form_parametros", clear_on_submit=False):
 
     with tab2:
         st.subheader("Condiciones del Terreno")
+        
+        suelo_options = ["suelo_seco", "suelo_agua"]
+        suelo_labels = {"suelo_seco": "Suelo Seco", "suelo_agua": "Suelo con Presencia de Agua"}
+        suelo_factores = {"suelo_seco": 1.0, "suelo_agua": 1.35}
+        
+        prev_suelo = prev.get("tipo_suelo", "suelo_seco")
+        if prev_suelo not in suelo_options:
+            prev_suelo = "suelo_seco"
+        
         tipo_suelo = st.radio(
             "Tipo de suelo",
-            options=[TipoSuelo.SUELO_SECO.value, TipoSuelo.SUELO_AGUA.value],
-            format_func=lambda x: TipoSuelo(x).label,
-            index=0 if prev.get("tipo_suelo") == TipoSuelo.SUELO_SECO.value else 1,
+            options=suelo_options,
+            format_func=lambda x: suelo_labels[x],
+            index=suelo_options.index(prev_suelo),
             horizontal=True,
             help="Seleccione la condición del suelo en el sitio"
         )
         
-        factor = TipoSuelo(tipo_suelo).factor_dificultad
+        factor = suelo_factores[tipo_suelo]
         if factor <= 1.1:
             soil_class = "soil-easy"
             soil_icon = "🟢"
@@ -221,7 +230,7 @@ with st.form("form_parametros", clear_on_submit=False):
             )
 
         # Ajuste por tipo de suelo
-        factor_suelo = TipoSuelo(tipo_suelo).factor_dificultad
+        factor_suelo = suelo_factores[tipo_suelo]
         t_perf_ajustado = t_perf_media * factor_suelo
         st.markdown(f"""
         <div class="preview-card">
@@ -301,7 +310,7 @@ if submitted:
     try:
         params = ParametrosEntrada(
             diametro_m=diametro, longitud_m=longitud, cantidad_pilotes=int(cantidad),
-            tipo_suelo=TipoSuelo(tipo_suelo), uso_lodo_bentonitico=uso_lodo,
+            tipo_suelo=tipo_suelo, uso_lodo_bentonitico=uso_lodo,
             num_mixers=int(num_mixers), distancia_proveedor_km=distancia,
             velocidad_transporte_kmh_media=vel_media, velocidad_transporte_kmh_std=vel_std,
             tiempo_perforacion_min_media=float(t_perf_media), tiempo_perforacion_min_std=float(t_perf_std),
