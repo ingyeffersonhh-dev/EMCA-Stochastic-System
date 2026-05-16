@@ -3,6 +3,14 @@ app/main.py
 Entry point de la aplicación Streamlit — EMCA Sistema de Pilotes.
 """
 import streamlit as st
+import os
+import sys
+
+# --- Configuración de Rutas para Deploy ---
+# Esto asegura que la carpeta 'core' sea visible desde cualquier módulo
+ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+if ROOT_DIR not in sys.path:
+    sys.path.append(ROOT_DIR)
 
 st.set_page_config(
     page_title="EMCA — Planificación de Pilotes",
