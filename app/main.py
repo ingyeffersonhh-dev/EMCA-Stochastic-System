@@ -434,7 +434,29 @@ css = f"""
 
 st.markdown(css, unsafe_allow_html=True)
 
+# Logo SVG en sidebar
+text_color = "#f1f5f9" if dark else "#0f172a"
+sub_color = "#94a3b8" if dark else "#64748b"
+
+logo_svg = f'''
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 60" width="180" height="54">
+  <defs>
+    <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#27ae60;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#2ecc71;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect x="2" y="2" width="56" height="56" rx="12" fill="url(#grad1)" opacity="0.15"/>
+  <rect x="8" y="8" width="44" height="44" rx="8" fill="url(#grad1)"/>
+  <text x="20" y="42" font-family="Arial,sans-serif" font-size="28" font-weight="bold" fill="white">E</text>
+  <text x="68" y="38" font-family="Inter,Arial,sans-serif" font-size="22" font-weight="700" fill="{text_color}">EMCA</text>
+  <text x="68" y="52" font-family="Inter,Arial,sans-serif" font-size="9" font-weight="500" fill="{sub_color}">STOCHASTIC SYSTEM</text>
+</svg>
+'''
+
 with st.sidebar:
+    st.markdown(f'<div style="text-align:center;padding:1rem 0;border-bottom:1px solid {border};margin-bottom:1rem">{logo_svg}</div>', unsafe_allow_html=True)
+    
     theme_icon = "" if dark else "☀️"
     theme_label = "Modo Claro" if dark else "Modo Oscuro"
     if st.button(f"{theme_icon} {theme_label}", use_container_width=True, type="secondary", on_click=toggle_theme):

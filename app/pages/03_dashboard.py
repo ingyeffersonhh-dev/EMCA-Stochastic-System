@@ -386,41 +386,15 @@ st.divider()
 # ===========================================================================
 # SECCIÓN 9: Exportar
 # ===========================================================================
-col_exp1, col_exp2 = st.columns(2)
-with col_exp1:
-    if st.button("📊 Descargar Excel", use_container_width=True, type="secondary"):
-        with st.spinner("Generando..."):
-            ruta = exportar_excel(resultado, directorio="exports")
-        with open(ruta, "rb") as f:
-            st.download_button(
-                label="⬇️ Excel", data=f.read(),
-                file_name=ruta.split("\\")[-1].split("/")[-1],
-                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                use_container_width=True,
-            )
-
-with col_exp2:
-    horas_dia_exp = params.horas_por_dia if params and hasattr(params, 'horas_por_dia') else 8.0
-    resumen = f"""EMCA - Reporte de Simulación
-Escenario: {params.nombre_escenario if params else 'N/A'}
-Fecha: {pd.Timestamp.now().strftime('%d/%m/%Y %H:%M')}
-
-KPIs PRINCIPALES
-Duracion P50: {kpis.tiempo_proyecto_p50_h:.1f}h ({kpis.tiempo_proyecto_p50_h/horas_dia_exp:.1f} dias)
-Duracion P90: {kpis.tiempo_proyecto_p90_h:.1f}h ({kpis.tiempo_proyecto_p90_h/horas_dia_exp:.1f} dias)
-Cuello de botella: {kpis.cuello_botella}
-Utilizacion Mixer: {kpis.utilizacion_mixer_pct:.0f}%
-
-CONFIGURACION
-Pilotes: {params.cantidad_pilotes if params else '?'}
-Mixers: {params.num_mixers if params else '?'}
-Distancia: {params.distancia_proveedor_km if params else '?'} km
-Jornada: {horas_dia_exp:.0f}h/dia
-"""
-    st.download_button(
-        label="📄 Descargar Reporte",
-        data=resumen.encode("utf-8"),
-        file_name=f"EMCA_{pd.Timestamp.now().strftime('%Y%m%d')}.txt",
-        mime="text/plain",
-        use_container_width=True,
-    )
+st.subheader("📥 Exportar Resultados")
+if st.button("📊 Descargar Reporte Excel", use_container_width=True, type="secondary"):
+    with st.spinner("Generando..."):
+        ruta = exportar_excel(resultado, directorio="exports")
+    with open(ruta, "rb") as f:
+        st.download_button(
+            label="⬇️ Descargar Excel",
+            data=f.read(),
+            file_name=ruta.split("\\")[-1].split("/")[-1],
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            use_container_width=True,
+        )
