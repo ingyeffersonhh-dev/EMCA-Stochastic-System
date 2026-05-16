@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+env/
+venv/
+ENV/
+build/
+dist/
+*.egg-info/
+
+# Streamlit
+.streamlit/
+
+# Local Data (Ignorar escenarios locales para que no se mezclen en Git si prefieres)
+# data/scenarios/*.json
+exports/
+
+# IDEs
+.vscode/
+.idea/
+
+# Agentes
+.agents/
+skills-lock.json
+implementation_plan.md

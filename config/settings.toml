@@ -1,0 +1,25 @@
+[proyecto]
+nombre = "EMCA — Sistema de Planificación de Pilotes"
+version = "1.0.0"
+empresa = "EMCA"
+
+[simulacion]
+replicas_default = 500
+replicas_min = 100
+replicas_max = 2000
+seed_default = 42
+
+[logistica]
+velocidad_transporte_kmh = 60.0
+horas_turno = 8.0
+dias_laborables_semana = 5
+
+[alertas]
+umbral_espera_mixer_h = 2.0
+umbral_utilizacion_pct = 85.0
+
+[rutas]
+data_dir = "data"
+exports_dir = "exports"
+scenarios_dir = "data/scenarios"
+results_dir = "data/results"

@@ -1,0 +1,18 @@
+{
+  "diametro_m": 0.8,
+  "longitud_m": 20.0,
+  "cantidad_pilotes": 20,
+  "tipo_suelo": "arcilla_blanda",
+  "uso_lodo_bentonitico": true,
+  "num_mixers": 2,
+  "distancia_proveedor_km": 30.0,
+  "velocidad_transporte_kmh": 60.0,
+  "tiempo_perforacion_h_media": 4.0,
+  "tiempo_perforacion_h_std": 0.8,
+  "dist_perforacion": "lognormal",
+  "tiempo_colado_h_media": 2.0,
+  "tiempo_colado_h_std": 0.5,
+  "dist_colado": "normal",
+  "nombre_escenario": "Escenario Base",
+  "notas": null
+}
