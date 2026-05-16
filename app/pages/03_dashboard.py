@@ -341,11 +341,11 @@ if len(archivos) >= 2:
                 </div>
                 <div class="preview-row">
                     <span class="preview-label">T. Perforación (h)</span>
-                    <span class="preview-value">{datos1.get('tiempo_perforacion_h_media', '?')}</span>
+                    <span class="preview-value">{datos1.get('tiempo_perforacion_min_media', '?')} min</span>
                 </div>
                 <div class="preview-row">
-                    <span class="preview-label">T. Colado (h)</span>
-                    <span class="preview-value">{datos1.get('tiempo_colado_h_media', '?')}</span>
+                    <span class="preview-label">T. Colado (min)</span>
+                    <span class="preview-value">{datos1.get('tiempo_colado_min_media', '?')} min</span>
                 </div>
             </div>
             """, unsafe_allow_html=True)
@@ -368,11 +368,11 @@ if len(archivos) >= 2:
                 </div>
                 <div class="preview-row">
                     <span class="preview-label">T. Perforación (h)</span>
-                    <span class="preview-value">{datos2.get('tiempo_perforacion_h_media', '?')}</span>
+                    <span class="preview-value">{datos2.get('tiempo_perforacion_min_media', '?')} min</span>
                 </div>
                 <div class="preview-row">
-                    <span class="preview-label">T. Colado (h)</span>
-                    <span class="preview-value">{datos2.get('tiempo_colado_h_media', '?')}</span>
+                    <span class="preview-label">T. Colado (min)</span>
+                    <span class="preview-value">{datos2.get('tiempo_colado_min_media', '?')} min</span>
                 </div>
             </div>
             """, unsafe_allow_html=True)

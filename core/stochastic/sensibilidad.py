@@ -26,16 +26,16 @@ def definir_problema(params_base: dict) -> dict:
     return {
         "num_vars": 4,
         "names": [
-            "tiempo_perforacion_h_media",
-            "tiempo_perforacion_h_std",
+            "tiempo_perforacion_min_media",
+            "tiempo_perforacion_min_std",
             "num_mixers",
             "distancia_proveedor_km",
         ],
         "bounds": [
-            [params_base["tiempo_perforacion_h_media"] * 0.7,
-             params_base["tiempo_perforacion_h_media"] * 1.3],
-            [params_base["tiempo_perforacion_h_std"] * 0.5,
-             params_base["tiempo_perforacion_h_std"] * 1.5],
+            [params_base["tiempo_perforacion_min_media"] * 0.7,
+             params_base["tiempo_perforacion_min_media"] * 1.3],
+            [params_base["tiempo_perforacion_min_std"] * 0.5,
+             params_base["tiempo_perforacion_min_std"] * 1.5],
             [max(1, params_base["num_mixers"] - 1),
              params_base["num_mixers"] + 2],
             [params_base["distancia_proveedor_km"] * 0.7,

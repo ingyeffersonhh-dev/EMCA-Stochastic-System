@@ -11,11 +11,12 @@ from core.simulation.engine import ejecutar_simulacion
 def params_base():
     return ParametrosEntrada(
         diametro_m=0.6, longitud_m=15.0, cantidad_pilotes=5,
-        tipo_suelo=TipoSuelo.ARCILLA_BLANDA, uso_lodo_bentonitico=True,
-        num_mixers=2, distancia_proveedor_km=30.0, velocidad_transporte_kmh=60.0,
-        tiempo_perforacion_h_media=4.0, tiempo_perforacion_h_std=0.8,
+        tipo_suelo=TipoSuelo.SUELO_SECO, uso_lodo_bentonitico=True,
+        num_mixers=2, distancia_proveedor_km=30.0,
+        velocidad_transporte_kmh_media=60.0, velocidad_transporte_kmh_std=10.0,
+        tiempo_perforacion_min_media=240.0, tiempo_perforacion_min_std=48.0,
         dist_perforacion=TipoDistribucion.LOGNORMAL,
-        tiempo_colado_h_media=2.0, dist_colado=TipoDistribucion.EXPONENTIAL,
+        tiempo_colado_min_media=120.0, dist_colado=TipoDistribucion.EXPONENTIAL,
     )
 
 
