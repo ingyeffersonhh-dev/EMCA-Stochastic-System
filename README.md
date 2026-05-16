@@ -53,6 +53,97 @@ graph TD
 - **Control Tower UI**: Interfaz Premium con diseño "SaaS Industrial" basada en **Glassmorphism**, optimizada para la visualización de KPIs críticos.
 - **Analítica Avanzada**: Histogramas con **Boxplots marginales** para análisis de cuartiles y cronogramas Gantt dinámicos.
 
+## 📊 Guía de Gráficos del Dashboard
+
+El **Módulo 3 — Dashboard Gerencial** presenta los resultados de la simulación mediante visualizaciones interactivas. A continuación se explica cada gráfico y cómo interpretarlo:
+
+### 1. 📌 Indicadores Clave (KPI Cards)
+| Métrica | Descripción | Cómo interpretarla |
+|---|---|---|
+| **Duración P10** | Percentil 10 de la distribución de duración | Escenario optimista: solo 10% de probabilidad de terminar antes |
+| **Duración P50** | Mediana (percentil 50) | Estimación central — el caso más probable |
+| **Duración P90** | Percentil 90 | Escenario conservador: 90% de confianza de terminar antes |
+| **Utilización Mixer** | % de tiempo que los mixers están ocupados | >85% indica saturación del sistema de suministro |
+| **Cuello de botella** | Fase crítica que limita la velocidad | Identifica dónde enfocar mejoras |
+
+### 2. 📊 Histograma con Boxplot Marginal (Distribución Monte Carlo)
+**Qué muestra:** La distribución de duraciones totales del proyecto obtenida tras N réplicas Monte Carlo.
+
+**Cómo leerlo:**
+- **Barras del histograma:** Frecuencia de cada rango de duración
+- **Boxplot superior:** Muestra mediana (línea central), cuartiles Q1-Q3 (caja), y valores atípicos (puntos)
+- **Líneas verticales de color:**
+  - 🟢 **P10** (verde): Límite optimista
+  - 🟡 **P50** (amarillo): Mediana
+  - 🔴 **P90** (rojo): Límite conservador
+- **Ancho de la distribución:** Indica la incertidumbre. Una distribución ancha significa alta variabilidad en los resultados.
+
+### 3. 📅 Cronograma Gantt (Réplica Base)
+**Qué muestra:** El cronograma detallado de cada pilote en la primera réplica de la simulación.
+
+**Cómo leerlo:**
+- **Eje Y:** Número de pilote (P1, P2, P3...)
+- **Eje X:** Tiempo en horas desde el inicio
+- **Colores por fase:**
+  - 🔵 **Perforación:** Tiempo de excavación del pilote
+  - 🔴 **Espera Mixer:** Tiempo muerto esperando disponibilidad de concreto
+  -  **Colado:** Tiempo de vaciado de concreto
+- **Interpretación clave:** Si las barras rojas (espera) son largas, hay un cuello de botella logístico. Si las barras azules dominan, la perforación es la fase limitante.
+
+### 4. 📈 Curva S — Avance Acumulado
+**Qué muestra:** El progreso acumulado del proyecto a lo largo del tiempo.
+
+**Cómo leerlo:**
+- **Eje X:** Tiempo transcurrido (horas)
+- **Eje Y:** Porcentaje de pilotes completados (0-100%)
+- **Forma de la curva:**
+  - **Pendiente pronunciada:** Avance rápido (buena eficiencia)
+  - **Mesetas (tramos planos):** Periodos de estancamiento (cuellos de botella)
+  - **Punto de inflexión:** Momento donde la velocidad de avance cambia
+- **Uso práctico:** Permite estimar en qué momento del proyecto se completará un porcentaje dado de pilotes.
+
+### 5. 🎯 Radar de Eficiencia del Sistema
+**Qué muestra:** Un perfil multidimensional de la eficiencia del sistema en 5 dimensiones.
+
+**Ejes del radar:**
+| Eje | Qué mide | Valor ideal |
+|---|---|---|
+| **Eficiencia Perforación** | % del tiempo total dedicado a perforar | Alto (>40%) |
+| **Eficiencia Colado** | % del tiempo total dedicado a colar | Alto (>20%) |
+| **Eficiencia Logística** | % del tiempo sin esperas de mixer | Alto (>80%) |
+| **Utilización Mixer** | % de uso de la flota de mixers | 70-85% (ni muy bajo ni saturado) |
+| **Predictibilidad** | Inversa de la varianza (baja varianza = alta predictibilidad) | Alto (>70%) |
+
+**Cómo leerlo:** Un polígono más grande y regular indica un sistema más eficiente y balanceado. Un polígono irregular señala desbalances (ej: alta perforación pero baja logística).
+
+### 6. 🌪️ Diagrama de Tornado (Análisis de Sensibilidad)
+**Qué muestra:** Qué parámetros de entrada tienen mayor impacto en la duración del proyecto.
+
+**Cómo leerlo:**
+- **Barras horizontales:** Cada parámetro con su índice de sensibilidad (0 a 1)
+- **Barras más largas:** Mayor influencia en el resultado
+- **Colores:** Rojo = alta sensibilidad, Verde = baja sensibilidad
+- **Uso práctico:** Identifica en qué parámetros enfocar esfuerzos de optimización. Reducir la variabilidad del parámetro más sensible tendrá el mayor impacto en reducir la incertidumbre del proyecto.
+
+### 7. 🗂️ Tabla de Detalle por Pilote
+**Qué muestra:** Datos individuales de cada pilote con filtros interactivos.
+
+**Funcionalidades:**
+- **Filtro por espera mixer:** Aísla pilotes con problemas logísticos
+- **Filtro por ciclo total:** Identifica pilotes atípicos
+- **Ordenamiento:** Por cualquier columna (perforación, espera, colado, ciclo total)
+- **Heatmap:** Las celdas de "Espera Mixer" se colorean (rojo = alta espera, verde = baja)
+
+### 8. ️ Comparador de Escenarios
+**Qué muestra:** Comparación side-by-side de dos escenarios guardados.
+
+**Cómo usarlo:**
+1. Selecciona dos escenarios diferentes en los dropdowns
+2. Compara parámetros clave: pilotes, mixers, distancia, tiempos
+3. Útil para evaluar el impacto de cambios (ej: ¿qué pasa si agrego un mixer?)
+
+---
+
 ## 🛠️ Stack Tecnológico
 | Capa | Tecnología |
 |---|---|
