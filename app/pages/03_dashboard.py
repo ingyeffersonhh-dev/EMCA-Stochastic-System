@@ -126,28 +126,38 @@ if tiempos:
 
     # Líneas de percentiles con posiciones alternadas para evitar solapamiento
     annotations_config = [
-        (kpis.tiempo_proyecto_p10_h, "#2ecc71", "P10", "top left"),
-        (kpis.tiempo_proyecto_p50_h, "#f39c12", "P50", "top center"),
-        (kpis.tiempo_proyecto_p90_h, "#ef4444", "P90", "top right"),
+        (kpis.tiempo_proyecto_p10_h, "#2ecc71", "P10"),
+        (kpis.tiempo_proyecto_p50_h, "#f39c12", "P50"),
+        (kpis.tiempo_proyecto_p90_h, "#ef4444", "P90"),
     ]
     
-    for i, (pct, color, label, position) in enumerate(annotations_config):
-        y_offset = 0.92 - (i * 0.06)
+    for i, (pct, color, label) in enumerate(annotations_config):
         fig_hist.add_vline(
             x=pct, line_dash="dash", line_color=color, line_width=2,
-            annotation_text=f"<b>{label}</b><br>{pct:.1f}h",
-            annotation_position=position,
-            annotation_font=dict(color=color, size=11),
-            annotation_bgcolor="rgba(128,128,128,0.1)",
-            annotation_y=y_offset,
+        )
+        fig_hist.add_annotation(
+            x=pct, y=0.92 - (i * 0.06),
+            text=f"<b>{label}</b><br>{pct:.1f}h",
+            font=dict(color=color, size=11),
+            bgcolor="rgba(128,128,128,0.1)",
+            showarrow=False,
+            yref="paper",
+            xref="x",
         )
 
     # Banda de confianza P10-P90
     fig_hist.add_vrect(
         x0=kpis.tiempo_proyecto_p10_h, x1=kpis.tiempo_proyecto_p90_h,
         fillcolor="rgba(59, 130, 246, 0.08)", layer="below", line_width=0,
-        annotation_text="Rango P10-P90", annotation_position="top left",
-        annotation_font=dict(size=10, color=chart_text),
+    )
+    fig_hist.add_annotation(
+        x=(kpis.tiempo_proyecto_p10_h + kpis.tiempo_proyecto_p90_h) / 2,
+        y=0.98,
+        text="Rango P10-P90",
+        font=dict(size=10, color=chart_text),
+        showarrow=False,
+        yref="paper",
+        xref="x",
     )
 
     fig_hist.update_layout(
