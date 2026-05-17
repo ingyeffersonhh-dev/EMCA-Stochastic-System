@@ -1,0 +1,20 @@
+{
+  "diametro_m": 0.4,
+  "longitud_m": 8.0,
+  "cantidad_pilotes": 5,
+  "tipo_suelo": "suelo_seco",
+  "uso_lodo_bentonitico": false,
+  "num_mixers": 2,
+  "distancia_proveedor_km": 10.0,
+  "velocidad_transporte_kmh_media": 70.0,
+  "velocidad_transporte_kmh_std": 5.0,
+  "tiempo_perforacion_min_media": 60.0,
+  "tiempo_perforacion_min_std": 10.0,
+  "dist_perforacion": "normal",
+  "tiempo_colado_min_media": 30.0,
+  "tiempo_colado_min_std": 5.0,
+  "dist_colado": "normal",
+  "horas_por_dia": 8.0,
+  "nombre_escenario": "Prueba Rápida - Pilotes Pequeños",
+  "notas": "Escenario ligero para pruebas rápidas: pocos pilotes, cortos tiempos."
+}

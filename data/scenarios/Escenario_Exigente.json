@@ -1,0 +1,20 @@
+{
+  "diametro_m": 0.8,
+  "longitud_m": 20.0,
+  "cantidad_pilotes": 50,
+  "tipo_suelo": "suelo_agua",
+  "uso_lodo_bentonitico": true,
+  "num_mixers": 3,
+  "distancia_proveedor_km": 45.0,
+  "velocidad_transporte_kmh_media": 50.0,
+  "velocidad_transporte_kmh_std": 15.0,
+  "tiempo_perforacion_min_media": 360.0,
+  "tiempo_perforacion_min_std": 72.0,
+  "dist_perforacion": "lognormal",
+  "tiempo_colado_min_media": 180.0,
+  "tiempo_colado_min_std": 40.0,
+  "dist_colado": "normal",
+  "horas_por_dia": 10.0,
+  "nombre_escenario": "Proyecto Río Guayas - Pilotes Grandes",
+  "notas": "Escenario exigente: suelo con agua, pilotes grandes, alta cantidad. Jornadas de 10h."
+}
