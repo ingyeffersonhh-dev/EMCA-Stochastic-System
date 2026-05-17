@@ -1,6 +1,7 @@
 """
 app/main.py
 Entry point de la aplicación Streamlit — EMCA Sistema de Pilotes.
+Con sincronización de tema oscuro/claro entre botón personalizado y Streamlit nativo.
 """
 import streamlit as st
 import os
@@ -17,8 +18,11 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
+# Detectar tema de Streamlit
+is_dark_theme = st.get_option("theme.backgroundColor") == "#0f172a"
+
 if "dark_mode" not in st.session_state:
-    st.session_state["dark_mode"] = True
+    st.session_state["dark_mode"] = is_dark_theme
 
 def toggle_theme():
     st.session_state["dark_mode"] = not st.session_state["dark_mode"]
@@ -33,6 +37,10 @@ if dark:
     text_secondary = "#94a3b8"
     border = "rgba(148, 163, 184, 0.15)"
     shadow = "rgba(0, 0, 0, 0.3)"
+    chart_bg = "rgba(30, 41, 59, 0.5)"
+    grid_color = "rgba(148, 163, 184, 0.15)"
+    hist_color = "#60a5fa"
+    hist_fill = "rgba(96, 165, 250, 0.6)"
 else:
     bg_primary = "#f8fafc"
     bg_card = "#ffffff"
@@ -40,6 +48,10 @@ else:
     text_secondary = "#64748b"
     border = "rgba(148, 163, 184, 0.25)"
     shadow = "rgba(0, 0, 0, 0.08)"
+    chart_bg = "rgba(255, 255, 255, 0.8)"
+    grid_color = "rgba(148, 163, 184, 0.25)"
+    hist_color = "#3b82f6"
+    hist_fill = "rgba(59, 130, 246, 0.7)"
 
 css = f"""
 <style>
@@ -429,6 +441,17 @@ css = f"""
     [data-testid="stHeader"] {{
         background: transparent !important;
     }}
+
+    /* Theme sync indicator */
+    .theme-sync-indicator {{
+        position: fixed;
+        top: 10px;
+        right: 10px;
+        z-index: 9999;
+        font-size: 0.75rem;
+        color: {text_secondary};
+        opacity: 0.7;
+    }}
 </style>
 """
 
@@ -454,10 +477,44 @@ logo_svg = f'''
 </svg>
 '''
 
+# JavaScript para sincronizar tema
+sync_js = """
+<script>
+(function() {
+    // Detectar tema actual de Streamlit
+    function getStreamlitTheme() {
+        const bgColor = getComputedStyle(document.documentElement).getPropertyValue('--background-color').trim();
+        return bgColor === '#0f172a' || bgColor === 'rgb(15, 23, 42)' ? 'dark' : 'light';
+    }
+    
+    // Observar cambios en el tema de Streamlit
+    const observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+            if (mutation.attributeName === 'style' || mutation.attributeName === 'class') {
+                const currentTheme = getStreamlitTheme();
+                // Actualizar variable CSS para gráficos
+                document.documentElement.style.setProperty('--chart-theme', currentTheme);
+            }
+        });
+    });
+    
+    observer.observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ['style', 'class', 'data-theme']
+    });
+    
+    // Inicializar
+    document.documentElement.style.setProperty('--chart-theme', getStreamlitTheme());
+})();
+</script>
+"""
+
+st.markdown(sync_js, unsafe_allow_html=True)
+
 with st.sidebar:
     st.markdown(f'<div style="text-align:center;padding:1rem 0;border-bottom:1px solid {border};margin-bottom:1rem">{logo_svg}</div>', unsafe_allow_html=True)
     
-    theme_icon = "" if dark else "☀️"
+    theme_icon = "🌙" if dark else "☀️"
     theme_label = "Modo Claro" if dark else "Modo Oscuro"
     if st.button(f"{theme_icon} {theme_label}", use_container_width=True, type="secondary", on_click=toggle_theme):
         st.rerun()

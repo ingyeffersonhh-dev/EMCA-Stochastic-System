@@ -1,7 +1,7 @@
 """
 app/pages/03_dashboard.py
 Módulo 3: Panel de Control Gerencial — Visualización completa de resultados.
-Con insights automáticos, radar chart, tabla con filtros, gráfico de tornado y comparador.
+Con gráficos adaptativos al tema oscuro/claro.
 """
 import streamlit as st
 import plotly.express as px
@@ -14,6 +14,41 @@ import os
 from core.analytics.kpis import resumen_estadistico, tabla_eventos_df, distribucion_tiempos_df
 from core.analytics.gantt import generar_gantt_df, generar_curva_s
 from core.analytics.exportar import exportar_excel
+
+# Detectar tema para colores adaptativos
+dark = st.session_state.get("dark_mode", True)
+
+# Colores adaptativos
+if dark:
+    chart_text = "#f1f5f9"
+    chart_grid = "rgba(148, 163, 184, 0.15)"
+    hist_color = "#60a5fa"
+    hist_fill = "rgba(96, 165, 250, 0.7)"
+    box_fill = "rgba(96, 165, 250, 0.15)"
+    box_line = "#60a5fa"
+    gantt_perf = "#60a5fa"
+    gantt_espera = "#f87171"
+    gantt_colado = "#4ade80"
+    curve_color = "#60a5fa"
+    curve_fill = "rgba(96, 165, 250, 0.15)"
+    radar_line = "#60a5fa"
+    radar_fill = "rgba(96, 165, 250, 0.15)"
+    tornado_cscale = "YlOrRd"
+else:
+    chart_text = "#0f172a"
+    chart_grid = "rgba(148, 163, 184, 0.25)"
+    hist_color = "#3b82f6"
+    hist_fill = "rgba(59, 130, 246, 0.8)"
+    box_fill = "rgba(59, 130, 246, 0.1)"
+    box_line = "#3b82f6"
+    gantt_perf = "#1E3A5F"
+    gantt_espera = "#E74C3C"
+    gantt_colado = "#27AE60"
+    curve_color = "#3b82f6"
+    curve_fill = "rgba(59, 130, 246, 0.15)"
+    radar_line = "#3b82f6"
+    radar_fill = "rgba(59, 130, 246, 0.15)"
+    tornado_cscale = "RdYlGn_r"
 
 st.title("📊 Panel de Control Gerencial")
 st.caption("Visión analítica del desempeño del sistema logístico y de construcción.")
@@ -55,14 +90,12 @@ horas_dia = params.horas_por_dia if params and hasattr(params, 'horas_por_dia') 
 dias_p50 = kpis.tiempo_proyecto_p50_h / horas_dia
 dias_p90 = kpis.tiempo_proyecto_p90_h / horas_dia
 
-# KPI Cards principales en una fila
 col1, col2, col3, col4 = st.columns(4)
 col1.metric("⏱️ Duración P50", f"{kpis.tiempo_proyecto_p50_h:.1f} h", f"{dias_p50:.1f} días")
 col2.metric("📈 Duración P90", f"{kpis.tiempo_proyecto_p90_h:.1f} h", f"{dias_p90:.1f} días")
 col3.metric("🔧 Utilización Mixer", f"{kpis.utilizacion_mixer_pct:.0f}%")
 col4.metric("⚡ Cuello de botella", kpis.cuello_botella)
 
-# Alertas compactas
 if kpis.alerta_logistica:
     st.error(f"🚨 **Alerta logística**: Espera mixer promedio = {kpis.tiempo_espera_mixer_promedio_h:.2f}h (>2.0h). Considere aumentar flota.")
 if kpis.alerta_capacidad_mixer:
@@ -71,47 +104,80 @@ if kpis.alerta_capacidad_mixer:
 st.divider()
 
 # ===========================================================================
-# SECCIÓN 2: Distribución de duración del proyecto
+# SECCIÓN 2: Distribución de duración del proyecto (MEJORADO)
 # ===========================================================================
 st.subheader("📊 Distribución de la Duración del Proyecto (Monte Carlo)")
 
 tiempos = resultado.tiempos_proyecto_todas_replicas
 if tiempos:
     arr = np.array(tiempos)
+    media = np.mean(arr)
+    std = np.std(arr)
+    n_replicas = len(arr)
+    
     df_tiempos = pd.DataFrame({"Duración": arr})
     fig_hist = px.histogram(
         df_tiempos, x="Duración", nbins=40,
         marginal="box",
-        color_discrete_sequence=["#3b82f6"],
+        color_discrete_sequence=[hist_color],
     )
     fig_hist.update_traces(opacity=0.85, marker_line_width=0, selector=dict(type="histogram"))
-    fig_hist.update_traces(fillcolor="rgba(59, 130, 246, 0.2)", line_color="#3b82f6", selector=dict(type="box"))
+    fig_hist.update_traces(fillcolor=box_fill, line_color=box_line, selector=dict(type="box"))
 
-    for pct, color, label in [
-        (kpis.tiempo_proyecto_p10_h, "#2ecc71", "P10"),
-        (kpis.tiempo_proyecto_p50_h, "#f39c12", "P50 (Mediana)"),
-        (kpis.tiempo_proyecto_p90_h, "#ef4444", "P90"),
-    ]:
+    # Líneas de percentiles con posiciones alternadas para evitar solapamiento
+    annotations_config = [
+        (kpis.tiempo_proyecto_p10_h, "#2ecc71", "P10", "top left"),
+        (kpis.tiempo_proyecto_p50_h, "#f39c12", "P50", "top center"),
+        (kpis.tiempo_proyecto_p90_h, "#ef4444", "P90", "top right"),
+    ]
+    
+    for i, (pct, color, label, position) in enumerate(annotations_config):
+        y_offset = 0.92 - (i * 0.06)
         fig_hist.add_vline(
             x=pct, line_dash="dash", line_color=color, line_width=2,
             annotation_text=f"<b>{label}</b><br>{pct:.1f}h",
-            annotation_position="top right",
+            annotation_position=position,
             annotation_font=dict(color=color, size=11),
-            annotation_bgcolor="rgba(128,128,128,0.1)"
+            annotation_bgcolor="rgba(128,128,128,0.1)",
+            annotation_y=y_offset,
         )
 
+    # Banda de confianza P10-P90
+    fig_hist.add_vrect(
+        x0=kpis.tiempo_proyecto_p10_h, x1=kpis.tiempo_proyecto_p90_h,
+        fillcolor="rgba(59, 130, 246, 0.08)", layer="below", line_width=0,
+        annotation_text="Rango P10-P90", annotation_position="top left",
+        annotation_font=dict(size=10, color=chart_text),
+    )
+
     fig_hist.update_layout(
-        xaxis_title="Duración del proyecto (h)",
-        yaxis_title="Frecuencia",
+        xaxis_title=dict(text="Duración del proyecto (h)", font=dict(size=13, color=chart_text)),
+        yaxis_title=dict(text="Frecuencia", font=dict(size=13, color=chart_text)),
         plot_bgcolor="rgba(0,0,0,0)",
         paper_bgcolor="rgba(0,0,0,0)",
-        height=400,
+        height=420,
         showlegend=False,
-        margin=dict(t=40, b=40, l=40, r=40),
-        xaxis=dict(showgrid=False),
-        yaxis=dict(showgrid=True, gridcolor="rgba(128,128,128,0.2)"),
-        font=dict(family="Inter, sans-serif")
+        margin=dict(t=30, b=50, l=60, r=30),
+        xaxis=dict(showgrid=True, gridcolor=chart_grid, gridwidth=1),
+        yaxis=dict(showgrid=True, gridcolor=chart_grid, gridwidth=1),
+        font=dict(family="Inter, sans-serif", color=chart_text),
     )
+    
+    # Stats badge
+    st.markdown(f"""
+    <div style="display:flex;gap:1rem;margin-bottom:1rem;flex-wrap:wrap;">
+        <div style="background:{'rgba(30,41,59,0.5)' if dark else 'rgba(255,255,255,0.8)'};border:1px solid {chart_grid};border-radius:8px;padding:0.5rem 1rem;font-size:0.85rem;">
+            <span style="color:{'rgba(148,163,184,0.8)' if dark else '#64748b'}">Media:</span> <b style="color:{chart_text}">{media:.1f}h</b>
+        </div>
+        <div style="background:{'rgba(30,41,59,0.5)' if dark else 'rgba(255,255,255,0.8)'};border:1px solid {chart_grid};border-radius:8px;padding:0.5rem 1rem;font-size:0.85rem;">
+            <span style="color:{'rgba(148,163,184,0.8)' if dark else '#64748b'}">Desv. Est:</span> <b style="color:{chart_text}">{std:.1f}h</b>
+        </div>
+        <div style="background:{'rgba(30,41,59,0.5)' if dark else 'rgba(255,255,255,0.8)'};border:1px solid {chart_grid};border-radius:8px;padding:0.5rem 1rem;font-size:0.85rem;">
+            <span style="color:{'rgba(148,163,184,0.8)' if dark else '#64748b'}">Réplicas:</span> <b style="color:{chart_text}">{n_replicas}</b>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+    
     st.plotly_chart(fig_hist, use_container_width=True)
 
 st.divider()
@@ -129,9 +195,9 @@ gantt_df = generar_gantt_df(resultado.eventos_replica_base, hora_inicio_proyecto
 
 if not gantt_df.empty:
     COLOR_MAP = {
-        "🔩 Perforación": "#1E3A5F",
-        "⏳ Espera Mixer": "#E74C3C",
-        "🪣 Colado": "#27AE60",
+        "🔩 Perforación": gantt_perf,
+        "⏳ Espera Mixer": gantt_espera,
+        "🪣 Colado": gantt_colado,
     }
     fig_gantt = px.timeline(
         gantt_df, x_start="Inicio", x_end="Fin",
@@ -147,8 +213,8 @@ if not gantt_df.empty:
         paper_bgcolor="rgba(0,0,0,0)",
         margin=dict(t=40, b=40),
         legend_title="Fase",
-        xaxis=dict(showgrid=True, gridcolor="rgba(128,128,128,0.2)"),
-        font=dict(family="Inter, sans-serif")
+        xaxis=dict(showgrid=True, gridcolor=chart_grid),
+        font=dict(family="Inter, sans-serif", color=chart_text),
     )
     st.plotly_chart(fig_gantt, use_container_width=True)
 
@@ -164,17 +230,17 @@ if not curva_df.empty:
     fig_s = px.line(
         curva_df, x="tiempo_h", y="avance_pct",
         labels={"tiempo_h": "Tiempo (h)", "avance_pct": "Pilotes completados (%)"},
-        color_discrete_sequence=["#3b82f6"],
+        color_discrete_sequence=[curve_color],
     )
-    fig_s.update_traces(fill="tozeroy", fillcolor="rgba(59, 130, 246, 0.2)", line=dict(width=3))
+    fig_s.update_traces(fill="tozeroy", fillcolor=curve_fill, line=dict(width=3))
     fig_s.update_layout(
         plot_bgcolor="rgba(0,0,0,0)",
         paper_bgcolor="rgba(0,0,0,0)",
         height=300,
         margin=dict(t=20, b=40),
-        yaxis=dict(range=[0, 105], showgrid=True, gridcolor="rgba(128,128,128,0.2)"),
-        xaxis=dict(showgrid=False),
-        font=dict(family="Inter, sans-serif")
+        yaxis=dict(range=[0, 105], showgrid=True, gridcolor=chart_grid),
+        xaxis=dict(showgrid=True, gridcolor=chart_grid),
+        font=dict(family="Inter, sans-serif", color=chart_text),
     )
     st.plotly_chart(fig_s, use_container_width=True)
 
@@ -202,12 +268,16 @@ with col_radar:
     fig_radar.add_trace(go.Scatterpolar(
         r=[eficiencia_perf, eficiencia_colado, eficiencia_logistica, utilizacion_mixer, predictibilidad],
         theta=["Perforación", "Colado", "Logística", "Mixer", "Predictibilidad"],
-        fill="toself", fillcolor="rgba(59, 130, 246, 0.15)",
-        line_color="#3b82f6", line_width=2,
+        fill="toself", fillcolor=radar_fill,
+        line_color=radar_line, line_width=2,
     ))
     fig_radar.update_layout(
-        polar=dict(radialaxis=dict(visible=True, range=[0, 100])),
+        polar=dict(
+            radialaxis=dict(visible=True, range=[0, 100], gridcolor=chart_grid),
+            angularaxis=dict(gridcolor=chart_grid),
+        ),
         height=320, showlegend=False, margin=dict(t=20, b=20),
+        font=dict(color=chart_text),
     )
     st.plotly_chart(fig_radar, use_container_width=True)
 
@@ -217,12 +287,15 @@ with col_tornado:
     fig_tornado = go.Figure()
     fig_tornado.add_trace(go.Bar(
         y=list(params_sens.keys()), x=list(params_sens.values()), orientation='h',
-        marker=dict(color=list(params_sens.values()), colorscale='RdYlGn_r'),
+        marker=dict(color=list(params_sens.values()), colorscale=tornado_cscale),
         text=[f"{v:.0%}" for v in params_sens.values()], textposition='outside',
+        textfont=dict(color=chart_text),
     ))
     fig_tornado.update_layout(
-        yaxis=dict(autorange="reversed"), height=320, margin=dict(t=20, b=40, l=90),
-        xaxis=dict(range=[0, 0.5]), showlegend=False,
+        yaxis=dict(autorange="reversed", gridcolor=chart_grid),
+        height=320, margin=dict(t=20, b=40, l=90),
+        xaxis=dict(range=[0, 0.5], gridcolor=chart_grid),
+        showlegend=False, font=dict(color=chart_text),
     )
     st.plotly_chart(fig_tornado, use_container_width=True)
 
