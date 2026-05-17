@@ -21,6 +21,7 @@ class EventoPilote:
     inicio_perforacion: float = 0.0
     fin_perforacion: float = 0.0
     inicio_espera_mixer: float = 0.0
+    fin_espera_mixer: float = 0.0  # Cuando el mixer queda disponible (antes del transporte)
     inicio_colado: float = 0.0
     fin_colado: float = 0.0
 
@@ -30,7 +31,8 @@ class EventoPilote:
 
     @property
     def tiempo_espera_mixer_h(self) -> float:
-        return max(0.0, self.inicio_colado - self.fin_perforacion)
+        # Solo el tiempo en cola esperando mixer (sin incluir transporte)
+        return max(0.0, self.fin_espera_mixer - self.fin_perforacion)
 
     @property
     def tiempo_colado_h(self) -> float:

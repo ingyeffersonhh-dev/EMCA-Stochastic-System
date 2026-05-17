@@ -46,6 +46,8 @@ def _proceso_pilote(
     evento.inicio_espera_mixer = env.now
     with mixer.request() as req:
         yield req
+        evento.fin_espera_mixer = env.now  # Mixer disponible (fin de espera en cola)
+        
         # Fase 3: Transporte (tiempo de viaje del mixer)
         yield env.timeout(t_transporte)
 

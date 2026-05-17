@@ -17,6 +17,7 @@ def eventos_mock():
             inicio_perforacion=i * 6.0,
             fin_perforacion=i * 6.0 + 4.0,
             inicio_espera_mixer=i * 6.0 + 4.0,
+            fin_espera_mixer=i * 6.0 + 5.0,  # Mixer disponible después de 1h de espera
             inicio_colado=i * 6.0 + 5.0,
             fin_colado=i * 6.0 + 7.0,
         )
