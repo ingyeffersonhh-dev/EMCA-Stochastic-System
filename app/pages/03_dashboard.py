@@ -144,14 +144,14 @@ elif incertidumbre < 0.05:
 html_sug = '<div style="display:flex; flex-direction:column; gap:1rem;">'
 for icon, title, text, color in sugerencias:
     html_sug += f'''
-    <div class="kpi-card" style="display:flex; align-items:center; gap:1.2rem; padding:1.2rem; background:rgba(22,22,37,0.7); border-left:4px solid {color}; text-align:left;">
-        <div style="font-size:2rem;">{icon}</div>
-        <div>
-            <h4 style="margin:0; font-size:1.1rem; font-weight:600; color:{TX};">{title}</h4>
-            <p style="margin:0.3rem 0 0; font-size:0.95rem; color:{TX2}; line-height:1.4;">{text}</p>
-        </div>
+<div class="kpi-card" style="display:flex; align-items:center; gap:1.2rem; padding:1.2rem; background:rgba(22,22,37,0.7); border-left:4px solid {color}; text-align:left;">
+    <div style="font-size:2rem;">{icon}</div>
+    <div>
+        <h4 style="margin:0; font-size:1.1rem; font-weight:600; color:{TX};">{title}</h4>
+        <p style="margin:0.3rem 0 0; font-size:0.95rem; color:{TX2}; line-height:1.4;">{text}</p>
     </div>
-    '''
+</div>
+'''
 html_sug += '</div>'
 st.markdown(html_sug, unsafe_allow_html=True)
 
