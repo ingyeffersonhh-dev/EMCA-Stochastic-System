@@ -174,6 +174,26 @@ if ejecutar:
 
     st.session_state["resultado"] = resultado
 
+    # --- Auto-guardar el escenario con resultados ---
+    try:
+        import os
+        import json
+        import dataclasses
+        scenarios_dir = "data/scenarios"
+        os.makedirs(scenarios_dir, exist_ok=True)
+        nombre_esc = params.nombre_escenario
+        nombre_archivo = f"{nombre_esc.replace(' ', '_')}.json"
+        
+        data_to_save = {
+            "parametros": params.model_dump(mode="json"),
+            "resultado": dataclasses.asdict(resultado)
+        }
+        with open(os.path.join(scenarios_dir, nombre_archivo), "w", encoding="utf-8") as f:
+            json.dump(data_to_save, f, indent=2, ensure_ascii=False)
+        st.toast(f"💾 Escenario '{nombre_esc}' auto-guardado con resultados.", icon="✅")
+    except Exception as e:
+        st.warning(f"No se pudo auto-guardar el escenario: {e}")
+
     # --- Resultados rápidos ---
     if resultado.kpis:
         k = resultado.kpis
