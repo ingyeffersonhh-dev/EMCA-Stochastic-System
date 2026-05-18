@@ -37,6 +37,27 @@ def _borde_fino():
     return Border(left=lado, right=lado, top=lado, bottom=lado)
 
 
+def _formatear_tiempo(horas_dec: float) -> str:
+    """Format decimal hours to a highly readable string format like '4.80 h (4h 48min)'."""
+    try:
+        horas_dec = float(horas_dec)
+    except (ValueError, TypeError):
+        return str(horas_dec)
+    
+    total_minutos = int(round(horas_dec * 60))
+    if total_minutos == 0:
+        return "0 min"
+        
+    if total_minutos < 60:
+        return f"{horas_dec:.2f} h ({total_minutos} min)"
+        
+    h = total_minutos // 60
+    m = total_minutos % 60
+    if m == 0:
+        return f"{horas_dec:.2f} h ({h}h)"
+    return f"{horas_dec:.2f} h ({h}h {m}min)"
+
+
 def exportar_excel(
     resultado: ResultadoSimulacion,
     directorio: str = "exports",
@@ -64,7 +85,7 @@ def exportar_excel(
     # ---------------------------------------------------------------
     ws_kpi = wb.create_sheet("📊 KPIs Gerenciales")
     ws_kpi.column_dimensions["A"].width = 35
-    ws_kpi.column_dimensions["B"].width = 25
+    ws_kpi.column_dimensions["B"].width = 30
 
     ws_kpi.append(["EMCA — Sistema de Planificación de Pilotes"])
     ws_kpi.merge_cells("A1:B1")
@@ -81,6 +102,8 @@ def exportar_excel(
 
     resumen = resumen_estadistico(resultado)
     for indicador, valor in resumen.items():
+        if "(h)" in indicador:
+            valor = _formatear_tiempo(valor)
         ws_kpi.append([indicador, valor])
         for col in [1, 2]:
             ws_kpi.cell(row=ws_kpi.max_row, column=col).border = _borde_fino()
@@ -104,6 +127,11 @@ def exportar_excel(
         }
         df_export = df_eventos.rename(columns=cols_rename)
 
+        # Formatear columnas de tiempo a formato amigable
+        for col_name in df_export.columns:
+            if "(h)" in col_name:
+                df_export[col_name] = df_export[col_name].apply(_formatear_tiempo)
+
         for r_idx, row in enumerate(dataframe_to_rows(df_export, index=False, header=True), 1):
             ws_det.append(row)
             if r_idx == 1:
@@ -113,7 +141,7 @@ def exportar_excel(
                     ws_det.cell(row=ws_det.max_row, column=col).border = _borde_fino()
 
         for col in ws_det.columns:
-            ws_det.column_dimensions[col[0].column_letter].width = 22
+            ws_det.column_dimensions[col[0].column_letter].width = 25
 
     # ---------------------------------------------------------------
     # Hoja 3: Distribución de tiempos (para gráfico en Excel)
