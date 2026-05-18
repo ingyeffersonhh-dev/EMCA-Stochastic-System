@@ -1,12 +1,22 @@
 """
 app/pages/02_simulacion.py
 Módulo 2: Configuración y ejecución del motor de simulación estocástica.
+Premium dark theme layout.
 """
 import streamlit as st
 import time
 import math
 
 from core.simulation.engine import ejecutar_simulacion
+
+st.markdown("""
+<div style="margin-bottom:1.5rem">
+    <h1 style="margin:0;font-size:1.8rem;font-weight:800">⚙️ Motor Estocástico</h1>
+    <p style="color:#8892B0;margin:.2rem 0 0;font-size:.92rem">
+        Configuración y ejecución de la simulación de Monte Carlo (SimPy)
+    </p>
+</div>
+""", unsafe_allow_html=True)
 
 # --- Stepper ---
 parametros_ok = "parametros" in st.session_state
@@ -26,30 +36,41 @@ for i, (num, label, completed) in enumerate(steps):
 stepper_html += '</div>'
 st.markdown(stepper_html, unsafe_allow_html=True)
 
-st.markdown("""
-<div class="engine-banner">
-    <h2>⚙️ Módulo 2 — Motor de Simulación Estocástica</h2>
-    <p>SimPy · Monte Carlo · Teoría de Colas</p>
-</div>
-""", unsafe_allow_html=True)
 
 # --- Verificar pre-condición ---
 if "parametros" not in st.session_state:
-    st.warning("⚠️ Primero complete la **Parametrización** en el Módulo 1.")
+    st.markdown('<div class="alerta-roja">⚠️ Primero complete la <strong>Parametrización</strong> en el Módulo 1.</div>', unsafe_allow_html=True)
     st.stop()
 
 params = st.session_state["parametros"]
 
 # --- Resumen del escenario ---
 with st.expander("📋 Resumen del escenario configurado", expanded=True):
-    c1, c2, c3, c4, c5 = st.columns(5)
-    c1.metric("Pilotes", params.cantidad_pilotes)
-    c2.metric("Mixers", params.num_mixers)
-    c3.metric("Distancia (km)", params.distancia_proveedor_km)
-    c4.metric("Suelo", params.tipo_suelo.label)
-    
     vol_total = math.pi * (params.diametro_m / 2) ** 2 * params.longitud_m * params.cantidad_pilotes
-    c5.metric("Vol. total", f"{vol_total:.1f} m³")
+    st.markdown(f"""
+    <div class="kpi-grid">
+        <div class="kpi-card" style="padding:1rem">
+            <div class="kpi-label">Pilotes</div>
+            <div class="kpi-value" style="font-size:1.4rem">{params.cantidad_pilotes}</div>
+        </div>
+        <div class="kpi-card" style="padding:1rem">
+            <div class="kpi-label">Mixers</div>
+            <div class="kpi-value" style="font-size:1.4rem">{params.num_mixers}</div>
+        </div>
+        <div class="kpi-card" style="padding:1rem">
+            <div class="kpi-label">Distancia</div>
+            <div class="kpi-value" style="font-size:1.4rem">{params.distancia_proveedor_km} km</div>
+        </div>
+        <div class="kpi-card" style="padding:1rem">
+            <div class="kpi-label">Suelo</div>
+            <div class="kpi-value" style="font-size:1.4rem">{params.tipo_suelo.label}</div>
+        </div>
+        <div class="kpi-card kpi-accent-cyan" style="padding:1rem">
+            <div class="kpi-label">Vol. Total</div>
+            <div class="kpi-value" style="font-size:1.4rem">{vol_total:.1f} m³</div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
 
 # --- Estimación de tiempos ---
 horas_dia = params.horas_por_dia
@@ -62,25 +83,27 @@ dias_estimados = t_total_estimado / horas_dia
 
 # Mini preview de resultados esperados
 st.markdown(f"""
-<div class="preview-card">
-    <h4>📊 Estimación Preliminar</h4>
+<div class="preview-card" style="margin-top:1.5rem">
+    <h4>📊 Estimación Preliminar Teórica</h4>
     <div class="preview-row">
-        <span class="preview-label">Tiempo por pilote</span>
+        <span class="preview-label">Tiempo por pilote (promedio)</span>
         <span class="preview-value">{t_estimado_pilote:.2f} h ({t_estimado_pilote*60:.0f} min)</span>
     </div>
     <div class="preview-row">
-        <span class="preview-label">Duración total</span>
+        <span class="preview-label">Duración total estimada</span>
         <span class="preview-value">{t_total_estimado:.1f} h ({dias_estimados:.1f} días de {horas_dia:.0f}h)</span>
     </div>
     <div class="preview-row">
-        <span class="preview-label">Transporte (ida/vuelta)</span>
+        <span class="preview-label">Ciclo de Transporte (ida/vuelta)</span>
         <span class="preview-value">{t_transporte:.2f} h</span>
     </div>
 </div>
 """, unsafe_allow_html=True)
 
+st.markdown("<br>", unsafe_allow_html=True)
+
 # --- Configuración de la simulación ---
-st.subheader("⚙️ Configuración del Motor")
+st.markdown('<div class="section-title"><h3>⚙️ Configuración del Motor</h3></div>', unsafe_allow_html=True)
 col_a, col_b = st.columns(2)
 with col_a:
     n_replicas = st.slider(
@@ -99,8 +122,8 @@ t_est_computo = n_replicas * params.cantidad_pilotes // 5000 + 1
 st.caption(f"⏱️ Tiempo estimado de cómputo: **{t_est_computo}–{t_est_computo + 2} segundos**")
 
 # --- Ejecutar simulación ---
-st.divider()
-ejecutar = st.button("🚀 Ejecutar Simulación", use_container_width=True, type="primary")
+st.markdown("<br>", unsafe_allow_html=True)
+ejecutar = st.button("🚀 Iniciar Simulación Estocástica", use_container_width=True, type="primary")
 
 if ejecutar:
     stages_container = st.empty()
@@ -154,20 +177,37 @@ if ejecutar:
     # --- Resultados rápidos ---
     if resultado.kpis:
         k = resultado.kpis
-        st.subheader("📊 Resultados Clave")
-        col1, col2, col3, col4 = st.columns(4)
-        col1.metric("⏱️ Duración P50", f"{k.tiempo_proyecto_p50_h:.1f} h",
-                    delta=f"{k.tiempo_proyecto_p50_h/horas_dia:.1f} días")
-        col2.metric("📈 Duración P90", f"{k.tiempo_proyecto_p90_h:.1f} h",
-                    delta=f"{k.tiempo_proyecto_p90_h/horas_dia:.1f} días")
-        col3.metric("⚡ Cuello de botella", k.cuello_botella)
-        col4.metric("🔧 Utilización Mixer", f"{k.utilizacion_mixer_pct:.0f}%",
-                    delta="⚠️ Alta" if k.utilizacion_mixer_pct > 85 else "✅ Normal",
-                    delta_color="inverse" if k.utilizacion_mixer_pct > 85 else "normal")
+        st.markdown('<div class="section-title" style="margin-top:2rem"><h3>📊 Resultados Clave</h3></div>', unsafe_allow_html=True)
+        
+        util_color = "kpi-accent-purple" if k.utilizacion_mixer_pct <= 85 else "kpi-accent-red"
+        
+        st.markdown(f"""
+        <div class="kpi-grid">
+            <div class="kpi-card kpi-accent-green">
+                <div class="kpi-label">Duración P50</div>
+                <div class="kpi-value">{k.tiempo_proyecto_p50_h:.1f} h</div>
+                <div style="color:#A0AEC0;font-size:0.8rem;margin-top:0.2rem">{k.tiempo_proyecto_p50_h/horas_dia:.1f} días</div>
+            </div>
+            <div class="kpi-card kpi-accent-cyan">
+                <div class="kpi-label">Duración P90</div>
+                <div class="kpi-value">{k.tiempo_proyecto_p90_h:.1f} h</div>
+                <div style="color:#A0AEC0;font-size:0.8rem;margin-top:0.2rem">{k.tiempo_proyecto_p90_h/horas_dia:.1f} días</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-label">Cuello de botella</div>
+                <div class="kpi-value" style="font-size:1.2rem;margin-top:0.4rem">{k.cuello_botella}</div>
+            </div>
+            <div class="kpi-card {util_color}">
+                <div class="kpi-label">Utilización Mixer</div>
+                <div class="kpi-value">{k.utilizacion_mixer_pct:.0f}%</div>
+                <div style="color:#A0AEC0;font-size:0.8rem;margin-top:0.2rem">{'⚠️ Alta' if k.utilizacion_mixer_pct > 85 else '✅ Normal'}</div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
 
         if k.alerta_logistica:
             st.markdown(f"""
-            <div class="alerta-roja">
+            <div class="alerta-roja" style="margin-top:1.5rem">
                 🚨 <strong>ALERTA LOGÍSTICA</strong>: Tiempo promedio de espera del mixer = 
                 <strong>{k.tiempo_espera_mixer_promedio_h:.2f} h</strong> (umbral: 2.0 h). 
                 Considere aumentar la flota o reducir la distancia al proveedor.
@@ -175,7 +215,7 @@ if ejecutar:
             """, unsafe_allow_html=True)
 
         st.markdown(f"""
-        <div class="alerta-info">
+        <div class="alerta-info" style="margin-top:1.5rem">
             ➡️ Vea el análisis completo en el <strong>Módulo 3 — Dashboard</strong>
         </div>
         """, unsafe_allow_html=True)

@@ -1,92 +1,136 @@
 """
 app/pages/00_home.py
-Módulo Home: Página de bienvenida con navegación visual y estado de sesión.
+Home — Premium dashboard greeting & project overview.
 """
 import streamlit as st
 import os
 import json
 from datetime import datetime
 
-st.title("🏗️ EMCA Control Tower")
-st.caption("Sistema Estocástico para Planificación de Pilotes — Apoyo a la Toma de Decisiones")
-
-# --- Stepper de progreso ---
-parametros_ok = "parametros" in st.session_state
-resultado_ok = "resultado" in st.session_state
-
-steps = [
-    ("1", "Parametrización", parametros_ok),
-    ("2", "Simulación", resultado_ok),
-    ("3", "Dashboard", resultado_ok),
-]
-
-stepper_html = '<div class="stepper">'
-for i, (num, label, completed) in enumerate(steps):
-    status = "completed" if completed else ("active" if (i == 0 and not parametros_ok) or (i == 1 and parametros_ok and not resultado_ok) or (i == 2 and resultado_ok) else "")
-    if not status:
-        status = ""
-    icon = "✅" if completed else num
-    stepper_html += f'<div class="stepper-step {status}"><span>{icon}</span><span>{label}</span></div>'
-    if i < len(steps) - 1:
-        stepper_html += '<span class="stepper-arrow">→</span>'
-stepper_html += '</div>'
-st.markdown(stepper_html, unsafe_allow_html=True)
-
-# --- Flujo visual ---
 st.markdown("""
-<div class="flow-diagram">
-    <div class="flow-node">📋 Configurar<br/><small>Parámetros</small></div>
-    <span class="flow-arrow">→</span>
-    <div class="flow-node">⚙️ Simular<br/><small>Monte Carlo</small></div>
-    <span class="flow-arrow">→</span>
-    <div class="flow-node">📊 Analizar<br/><small>Dashboard</small></div>
+<div style="margin-bottom:1.5rem">
+    <h1 style="margin:0;font-size:2rem;font-weight:800">
+        Bienvenido al Control Tower 👋
+    </h1>
+    <p style="color:#8892B0;margin:.3rem 0 0;font-size:1rem">
+        Sistema estocástico de apoyo a la toma de decisiones para perforación de pilotes
+    </p>
 </div>
 """, unsafe_allow_html=True)
 
-# --- Cards navegables ---
-col1, col2, col3 = st.columns(3)
+# ── Status flags ───────────────────────────────────────────────
+p_ok = "parametros" in st.session_state
+r_ok = "resultado" in st.session_state
 
-with col1:
-    if st.button("📋 Módulo 1 — Parametrización", use_container_width=True, type="primary" if not parametros_ok else "secondary"):
+# ── Stepper ────────────────────────────────────────────────────
+steps = [("1", "Parametrización", p_ok), ("2", "Simulación", r_ok), ("3", "Dashboard", r_ok)]
+html = '<div class="stepper">'
+for i, (n, l, c) in enumerate(steps):
+    s = "completed" if c else ("active" if (i == 0 and not p_ok) or (i == 1 and p_ok and not r_ok) or (i == 2 and r_ok) else "")
+    icon = "✅" if c else n
+    html += f'<div class="stepper-step {s}"><span>{icon}</span><span>{l}</span></div>'
+    if i < 2:
+        html += '<span class="stepper-arrow">→</span>'
+html += '</div>'
+st.markdown(html, unsafe_allow_html=True)
+
+# ── KPI Summary Cards ─────────────────────────────────────────
+if r_ok:
+    k = st.session_state["resultado"].kpis
+    params = st.session_state.get("parametros")
+    h_dia = params.horas_por_dia if params else 8.0
+
+    st.markdown(f"""
+    <div class="kpi-grid">
+        <div class="kpi-card kpi-accent-green">
+            <div class="kpi-label">Duración P50</div>
+            <div class="kpi-value">{k.tiempo_proyecto_p50_h:.1f}h</div>
+            <div class="kpi-delta neutral">≈ {k.tiempo_proyecto_p50_h / h_dia:.1f} días</div>
+        </div>
+        <div class="kpi-card kpi-accent-blue">
+            <div class="kpi-label">Duración P90</div>
+            <div class="kpi-value">{k.tiempo_proyecto_p90_h:.1f}h</div>
+            <div class="kpi-delta neutral">≈ {k.tiempo_proyecto_p90_h / h_dia:.1f} días</div>
+        </div>
+        <div class="kpi-card kpi-accent-yellow">
+            <div class="kpi-label">Utilización Mixer</div>
+            <div class="kpi-value">{k.utilizacion_mixer_pct:.0f}%</div>
+            <div class="kpi-delta {'down' if k.utilizacion_mixer_pct > 85 else 'up'}">
+                {'⚠️ Saturado' if k.utilizacion_mixer_pct > 85 else '✓ Normal'}
+            </div>
+        </div>
+        <div class="kpi-card kpi-accent-red">
+            <div class="kpi-label">Cuello de Botella</div>
+            <div class="kpi-value" style="font-size:1.3rem">{k.cuello_botella.upper()}</div>
+            <div class="kpi-delta neutral">
+                Espera mixer: {k.tiempo_espera_mixer_promedio_h:.2f}h
+            </div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+# ── Flow Diagram ───────────────────────────────────────────────
+st.markdown("""
+<div class="flow-diagram">
+    <div class="flow-node">📋 Configurar<br/><small style="color:#8892B0">Parámetros</small></div>
+    <span class="flow-arrow">→</span>
+    <div class="flow-node">⚙️ Simular<br/><small style="color:#8892B0">Monte Carlo</small></div>
+    <span class="flow-arrow">→</span>
+    <div class="flow-node">📊 Analizar<br/><small style="color:#8892B0">Dashboard</small></div>
+</div>
+""", unsafe_allow_html=True)
+
+# ── Module Navigation Cards ───────────────────────────────────
+c1, c2, c3 = st.columns(3)
+
+with c1:
+    if st.button("📋 Parametrización", use_container_width=True,
+                  type="primary" if not p_ok else "secondary"):
         st.switch_page("pages/01_parametrizacion.py")
     st.markdown("""
-    <div class="nav-card" style="margin-top: 0.5rem;">
-        <h4>Configuración del Proyecto</h4>
-        <p>Ingrese dimensiones del pilote, tipo de suelo, número de mixers, distancia al proveedor y parámetros estocásticos de perforación y colado.</p>
+    <div class="nav-card">
+        <h4>Configuración</h4>
+        <p>Dimensiones del pilote, tipo de suelo, flota de mixers, distancia
+        al proveedor y parámetros estocásticos de perforación y colado.</p>
     </div>
     """, unsafe_allow_html=True)
 
-with col2:
-    if st.button("⚙️ Módulo 2 — Simulación", use_container_width=True, type="primary" if (parametros_ok and not resultado_ok) else "secondary", disabled=not parametros_ok):
+with c2:
+    if st.button("⚙️ Simulación", use_container_width=True,
+                  type="primary" if (p_ok and not r_ok) else "secondary",
+                  disabled=not p_ok):
         st.switch_page("pages/02_simulacion.py")
     st.markdown("""
-    <div class="nav-card" style="margin-top: 0.5rem;">
-        <h4>Motor de Simulación</h4>
-        <p>Ejecute réplicas Monte Carlo sobre el motor de eventos discretos (SimPy). Configure cantidad de réplicas y semilla aleatoria.</p>
+    <div class="nav-card">
+        <h4>Motor Estocástico</h4>
+        <p>Ejecute réplicas Monte Carlo sobre el motor de eventos discretos
+        (SimPy). Configure réplicas y semilla aleatoria.</p>
     </div>
     """, unsafe_allow_html=True)
 
-with col3:
-    if st.button("📊 Módulo 3 — Dashboard", use_container_width=True, type="primary" if resultado_ok else "secondary", disabled=not resultado_ok):
+with c3:
+    if st.button("📊 Dashboard", use_container_width=True,
+                  type="primary" if r_ok else "secondary",
+                  disabled=not r_ok):
         st.switch_page("pages/03_dashboard.py")
     st.markdown("""
-    <div class="nav-card" style="margin-top: 0.5rem;">
+    <div class="nav-card">
         <h4>Panel Gerencial</h4>
-        <p>Visualice cronograma Gantt, distribución de duraciones, KPIs, alertas logísticas y exporte resultados a Excel.</p>
+        <p>Cronograma Gantt, distribución de duraciones, KPIs,
+        alertas logísticas y exportación a Excel.</p>
     </div>
     """, unsafe_allow_html=True)
 
 st.divider()
 
-# --- Estado actual de la sesión ---
+# ── Session Status ────────────────────────────────────────────
 st.subheader("📌 Estado de la Sesión")
-col_a, col_b, col_c = st.columns(3)
+c_a, c_b, c_c = st.columns(3)
+c_a.metric("Parámetros", "✅ Configurados" if p_ok else "⬜ Pendiente")
+c_b.metric("Simulación", "✅ Ejecutada" if r_ok else "⬜ Pendiente")
+c_c.metric("Resultados", "✅ Listos" if r_ok else "⬜ Pendiente")
 
-col_a.metric("Parámetros", "✅ Configurados" if parametros_ok else "⬜ Pendiente")
-col_b.metric("Simulación", "✅ Ejecutada" if resultado_ok else "⬜ Pendiente")
-col_c.metric("Resultados", "✅ Listos" if resultado_ok else "⬜ Pendiente")
-
-# --- Escenarios recientes ---
+# ── Saved Scenarios ───────────────────────────────────────────
 st.divider()
 st.subheader("📂 Escenarios Guardados")
 
@@ -96,23 +140,20 @@ archivos = [f for f in os.listdir(scenarios_dir) if f.endswith(".json")]
 
 if archivos:
     archivos.sort(key=lambda x: os.path.getmtime(os.path.join(scenarios_dir, x)), reverse=True)
-    
-    c1, c2 = st.columns([2, 1])
-    with c1:
+    sc1, sc2 = st.columns([2, 1])
+    with sc1:
         for archivo in archivos[:5]:
-            filepath = os.path.join(scenarios_dir, archivo)
-            mtime = datetime.fromtimestamp(os.path.getmtime(filepath)).strftime("%d/%m/%Y %H:%M")
+            fp = os.path.join(scenarios_dir, archivo)
+            mtime = datetime.fromtimestamp(os.path.getmtime(fp)).strftime("%d/%m/%Y %H:%M")
             try:
-                with open(filepath, encoding="utf-8") as f:
-                    datos = json.load(f)
-                nombre = datos.get("nombre_escenario", archivo.replace(".json", ""))
-                pilotes = datos.get("cantidad_pilotes", "?")
-                mixers = datos.get("num_mixers", "?")
-            except:
-                nombre = archivo.replace(".json", "")
-                pilotes = "?"
-                mixers = "?"
-            
+                with open(fp, encoding="utf-8") as f:
+                    d = json.load(f)
+                nombre = d.get("nombre_escenario", archivo.replace(".json", ""))
+                pilotes = d.get("cantidad_pilotes", "?")
+                mixers = d.get("num_mixers", "?")
+            except Exception:
+                nombre, pilotes, mixers = archivo.replace(".json", ""), "?", "?"
+
             st.markdown(f"""
             <div class="scenario-item">
                 <div>
@@ -122,8 +163,8 @@ if archivos:
                 <div class="scenario-date">{mtime}</div>
             </div>
             """, unsafe_allow_html=True)
-    
-    with c2:
+
+    with sc2:
         st.markdown(f"""
         <div class="preview-card">
             <h4>Resumen</h4>
@@ -132,13 +173,17 @@ if archivos:
                 <span class="preview-value">{len(archivos)}</span>
             </div>
             <div class="preview-row">
-                <span class="preview-label">Última modificación</span>
-                <span class="preview-value">{archivos[0]}</span>
+                <span class="preview-label">Último</span>
+                <span class="preview-value">{archivos[0].replace('.json','')}</span>
             </div>
         </div>
         """, unsafe_allow_html=True)
 else:
-    st.info("No hay escenarios guardados. Comience en el **Módulo 1** para crear uno.")
+    st.info("No hay escenarios guardados. Comience en **Parametrización** para crear uno.")
 
 st.divider()
-st.info("💡 Navegue por los módulos en orden: **Parametrización → Simulación → Dashboard**")
+st.markdown("""
+<div class="alerta-info">
+    💡 Navegue en orden: <strong>Parametrización → Simulación → Dashboard</strong>
+</div>
+""", unsafe_allow_html=True)

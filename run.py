@@ -13,4 +13,4 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 # Re-usar el main de la app
-exec(open(os.path.join(os.path.dirname(__file__), "app", "main.py")).read())
+exec(open(os.path.join(os.path.dirname(__file__), "app", "main.py"), encoding="utf-8").read())

@@ -8,13 +8,18 @@
   "distancia_proveedor_km": 30.0,
   "velocidad_transporte_kmh_media": 60.0,
   "velocidad_transporte_kmh_std": 10.0,
+  "velocidad_transporte_kmh": null,
   "tiempo_perforacion_min_media": 240.0,
   "tiempo_perforacion_min_std": 48.0,
+  "perf_h_media": null,
+  "perf_h_std": null,
   "dist_perforacion": "lognormal",
   "tiempo_colado_min_media": 120.0,
   "tiempo_colado_min_std": 30.0,
-  "dist_colado": "exponential",
+  "colado_h_media": null,
+  "colado_h_std": null,
+  "dist_colado": "normal",
   "horas_por_dia": 8.0,
   "nombre_escenario": "Escenario Base",
-  "notas": "Escenario de prueba por defecto"
+  "notas": null
 }
