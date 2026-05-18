@@ -34,11 +34,11 @@ def _layout(fig, h=400, **kw):
         height=h,
         margin=dict(t=30, b=50, l=60, r=30),
         font=dict(family="Inter,sans-serif", color=TX, size=12),
-        xaxis=dict(showgrid=True, gridcolor=GRD, gridwidth=1, zeroline=False),
-        yaxis=dict(showgrid=True, gridcolor=GRD, gridwidth=1, zeroline=False),
         legend=dict(font=dict(color=TX2)),
         **kw,
     )
+    fig.update_xaxes(showgrid=True, gridcolor=GRD, gridwidth=1, zeroline=False)
+    fig.update_yaxes(showgrid=True, gridcolor=GRD, gridwidth=1, zeroline=False)
 
 # ── Title ──────────────────────────────────────────────────────
 st.markdown("""
