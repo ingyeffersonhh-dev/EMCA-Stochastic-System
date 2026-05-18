@@ -147,15 +147,25 @@ with st.form("form_parametros", clear_on_submit=False):
         with c10:
             t_perf_std = st.number_input("σ Perforación", 5, 600, value=int(prev.get("tiempo_perforacion_min_std", 48)), step=5)
         with c11:
-            dist_perf = st.selectbox("Dist. Perforación", [e.value for e in TipoDistribucion], index=0, key="dp")
+            opts_perf = [e.value for e in TipoDistribucion]
+            p_dist_perf = prev.get("dist_perforacion", opts_perf[0])
+            if hasattr(p_dist_perf, "value"):
+                p_dist_perf = p_dist_perf.value
+            idx_perf = opts_perf.index(p_dist_perf) if p_dist_perf in opts_perf else 0
+            dist_perf = st.selectbox("Dist. Perforación", opts_perf, index=idx_perf, key="dp")
 
         c12, c13, c14 = st.columns(3)
         with c12:
             t_colado_media = st.number_input("μ Colado", 15, 1440, value=int(prev.get("tiempo_colado_min_media", 120)), step=15)
         with c13:
-            st.empty() # placeholder
+            t_colado_std = st.number_input("σ Colado", 2, 300, value=int(prev.get("tiempo_colado_min_std", 30)), step=5)
         with c14:
-            dist_colado = st.selectbox("Dist. Colado", [e.value for e in TipoDistribucion], index=1, key="dc")
+            opts_col = [e.value for e in TipoDistribucion]
+            p_dist_col = prev.get("dist_colado", opts_col[1])
+            if hasattr(p_dist_col, "value"):
+                p_dist_col = p_dist_col.value
+            idx_col = opts_col.index(p_dist_col) if p_dist_col in opts_col else 1
+            dist_colado = st.selectbox("Dist. Colado", opts_col, index=idx_col, key="dc")
 
         t_perf_aj = t_perf_media * factor
         st.markdown(f"""
@@ -166,7 +176,7 @@ with st.form("form_parametros", clear_on_submit=False):
             <div class="preview-row"><span class="preview-label">Perf. (Ajustado ×{factor})</span>
                 <span class="preview-value" style="color:{'#FF6B6B' if factor>1.1 else '#00E68A'}">{t_perf_aj:.0f}m ({t_perf_aj/60:.1f}h)</span></div>
             <div class="preview-row"><span class="preview-label">Colado</span>
-                <span class="preview-value">{dist_colado} (μ={t_colado_media}m)</span></div>
+                <span class="preview-value">{dist_colado} (μ={t_colado_media}m, σ={t_colado_std}m)</span></div>
         </div>
         """, unsafe_allow_html=True)
 
@@ -188,7 +198,7 @@ if submitted:
             velocidad_transporte_kmh_media=vel_media, velocidad_transporte_kmh_std=vel_std,
             tiempo_perforacion_min_media=float(t_perf_media), tiempo_perforacion_min_std=float(t_perf_std),
             dist_perforacion=TipoDistribucion(dist_perf),
-            tiempo_colado_min_media=float(t_colado_media),
+            tiempo_colado_min_media=float(t_colado_media), tiempo_colado_min_std=float(t_colado_std),
             dist_colado=TipoDistribucion(dist_colado),
             horas_por_dia=horas_dia,
             nombre_escenario=nombre_esc, notas=notas or None,
