@@ -12,7 +12,7 @@ import os
 
 from core.analytics.kpis import resumen_estadistico, tabla_eventos_df, distribucion_tiempos_df
 from core.analytics.gantt import generar_gantt_df, generar_curva_s
-from core.analytics.exportar import exportar_excel
+from core.analytics.exportar import exportar_excel, _formatear_tiempo
 
 # ── Design tokens ──────────────────────────────────────────────
 TX  = "#E2E8F0"
@@ -80,17 +80,17 @@ st.markdown(f"""
 <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr)">
     <div class="kpi-card kpi-accent-green">
         <div class="kpi-label">Duración P10</div>
-        <div class="kpi-value">{kpis.tiempo_proyecto_p10_h:.1f}h</div>
+        <div class="kpi-value" style="font-size:1.6rem">{_formatear_tiempo(kpis.tiempo_proyecto_p10_h)}</div>
         <div class="kpi-delta up">Optimista · {kpis.tiempo_proyecto_p10_h/h_dia:.1f}d</div>
     </div>
     <div class="kpi-card kpi-accent-blue">
         <div class="kpi-label">Duración P50</div>
-        <div class="kpi-value">{kpis.tiempo_proyecto_p50_h:.1f}h</div>
+        <div class="kpi-value" style="font-size:1.6rem">{_formatear_tiempo(kpis.tiempo_proyecto_p50_h)}</div>
         <div class="kpi-delta neutral">Mediana · {kpis.tiempo_proyecto_p50_h/h_dia:.1f}d</div>
     </div>
     <div class="kpi-card kpi-accent-yellow">
         <div class="kpi-label">Duración P90</div>
-        <div class="kpi-value">{kpis.tiempo_proyecto_p90_h:.1f}h</div>
+        <div class="kpi-value" style="font-size:1.6rem">{_formatear_tiempo(kpis.tiempo_proyecto_p90_h)}</div>
         <div class="kpi-delta neutral">Conservador · {kpis.tiempo_proyecto_p90_h/h_dia:.1f}d</div>
     </div>
     <div class="kpi-card kpi-accent-red">
@@ -107,7 +107,7 @@ if kpis.alerta_logistica:
     st.markdown(f"""
     <div class="alerta-roja">
         🚨 <strong>ALERTA LOGÍSTICA</strong>: Espera mixer promedio =
-        <strong>{kpis.tiempo_espera_mixer_promedio_h:.2f}h</strong> (>2.0h).
+        <strong>{_formatear_tiempo(kpis.tiempo_espera_mixer_promedio_h)}</strong>.
         Considere aumentar la flota o reducir la distancia.
     </div>
     """, unsafe_allow_html=True)
@@ -126,7 +126,7 @@ elif kpis.utilizacion_mixer_pct < 45:
     sugerencias.append(("💰", "Oportunidad de Ahorro", f"La utilización de la flota es baja ({kpis.utilizacion_mixer_pct:.0f}%). Podría reducir el número de mixers asignados para disminuir costos operativos diarios sin retrasar la obra."))
 
 if kpis.tiempo_espera_mixer_promedio_h > 1.5:
-    sugerencias.append(("🚚", "Sincronización de Despachos", f"El tiempo promedio de espera del mixer en obra es alto ({kpis.tiempo_espera_mixer_promedio_h:.1f}h). Mejorar la comunicación con la planta concretera para despachar justo al finalizar la perforación ahorrará costos de inactividad."))
+    sugerencias.append(("🚚", "Sincronización de Despachos", f"El tiempo promedio de espera del mixer en obra es alto ({_formatear_tiempo(kpis.tiempo_espera_mixer_promedio_h)}). Mejorar la comunicación con la planta concretera para despachar justo al finalizar la perforación ahorrará costos de inactividad."))
 
 # Cuellos de botella
 if kpis.cuello_botella == "Transporte":
@@ -183,7 +183,7 @@ if tiempos:
     ]:
         fig_hist.add_vline(x=val, line_dash="dash", line_color=color, line_width=2)
         fig_hist.add_annotation(
-            x=val, y=yp, text=f"<b>{label}</b><br>{val:.1f}h",
+            x=val, y=yp, text=f"<b>{label}</b><br>{_formatear_tiempo(val)}",
             font=dict(color=color, size=11), bgcolor="rgba(22,22,37,0.9)",
             bordercolor=color, borderwidth=1, borderpad=4,
             showarrow=False, yref="paper",
@@ -203,9 +203,9 @@ if tiempos:
     st.markdown(f"""
     <div style="display:flex;gap:.6rem;margin-bottom:.8rem;flex-wrap:wrap">
         <div class="stats-badge"><span class="stats-badge-label">Media:</span>
-            <span class="stats-badge-value">{media_v:.1f}h</span></div>
+            <span class="stats-badge-value">{_formatear_tiempo(media_v)}</span></div>
         <div class="stats-badge"><span class="stats-badge-label">Desv.Est:</span>
-            <span class="stats-badge-value">{std_v:.1f}h</span></div>
+            <span class="stats-badge-value">{_formatear_tiempo(std_v)}</span></div>
         <div class="stats-badge"><span class="stats-badge-label">Réplicas:</span>
             <span class="stats-badge-value">{len(arr)}</span></div>
     </div>
@@ -326,6 +326,13 @@ st.divider()
 # DETAIL TABLE
 # ══════════════════════════════════════════════════════════════
 st.markdown('<div class="section-title"><h3>🗂️ Detalle por Pilote</h3><span class="badge">Réplica Base</span></div>', unsafe_allow_html=True)
+st.markdown('''
+<div style="display:flex; gap: 1rem; margin-bottom: 1rem; font-size: 0.9rem; background:rgba(255,255,255,0.05); padding: 0.5rem 1rem; border-radius: 0.5rem; justify-content: center;">
+  <div>🟩 <b>Óptimo</b> (0h - 2h)</div>
+  <div>🟨 <b>Moderado</b> (2h - 5h)</div>
+  <div>🟥 <b>Crítico</b> (> 5h)</div>
+</div>
+''', unsafe_allow_html=True)
 
 df_tabla = tabla_eventos_df(resultado.eventos_replica_base)
 if not df_tabla.empty:

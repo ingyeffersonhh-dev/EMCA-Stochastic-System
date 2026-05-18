@@ -89,6 +89,9 @@ class KPIs:
     def semanas_p50(self) -> float:
         return self.dias_p50 / 5.0
 
+    @staticmethod
+    def from_dict(d: dict) -> KPIs:
+        return KPIs(**d)
 
 # ---------------------------------------------------------------------------
 # Resultado completo de la simulación
@@ -119,3 +122,23 @@ class ResultadoSimulacion:
     @property
     def tiene_resultados(self) -> bool:
         return len(self.tiempos_proyecto_todas_replicas) > 0
+
+    @staticmethod
+    def from_dict(d: dict) -> ResultadoSimulacion:
+        kpis_data = d.get("kpis")
+        kpis_obj = KPIs.from_dict(kpis_data) if kpis_data else None
+
+        eventos_data = d.get("eventos_replica_base", [])
+        # Extract only the explicit fields defined in EventoPilote
+        valid_fields = {"pilote_id", "inicio_perforacion", "fin_perforacion", "inicio_espera_mixer", "fin_espera_mixer", "inicio_colado", "fin_colado"}
+        eventos_obj = [EventoPilote(**{k: v for k, v in ed.items() if k in valid_fields}) for ed in eventos_data]
+
+        return ResultadoSimulacion(
+            timestamp=d.get("timestamp", ""),
+            nombre_escenario=d.get("nombre_escenario", ""),
+            replicas_ejecutadas=d.get("replicas_ejecutadas", 0),
+            seed_usado=d.get("seed_usado", 42),
+            tiempos_proyecto_todas_replicas=d.get("tiempos_proyecto_todas_replicas", []),
+            eventos_replica_base=eventos_obj,
+            kpis=kpis_obj
+        )

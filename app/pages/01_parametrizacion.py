@@ -9,6 +9,8 @@ import os
 import math
 
 from core.models.parametros import ParametrosEntrada, TipoSuelo, TipoDistribucion
+from core.models.resultados import ResultadoSimulacion
+import dataclasses
 
 st.markdown("""
 <div style="margin-bottom:1.5rem">
@@ -50,13 +52,27 @@ with st.sidebar:
             if c_load.button("📂 Cargar", use_container_width=True):
                 with open(os.path.join(scenarios_dir, escenario_sel), encoding="utf-8") as f:
                     datos = json.load(f)
-                st.session_state["datos_formulario"] = datos
+                
+                if "parametros" in datos:
+                    st.session_state["datos_formulario"] = datos["parametros"]
+                    if "resultado" in datos:
+                        st.session_state["resultado"] = ResultadoSimulacion.from_dict(datos["resultado"])
+                    elif "resultado" in st.session_state:
+                        del st.session_state["resultado"]
+                else:
+                    st.session_state["datos_formulario"] = datos
+                    if "resultado" in st.session_state:
+                        del st.session_state["resultado"]
                 st.rerun()
             
             if c_del.button("🗑️ Borrar", use_container_width=True, type="secondary"):
                 os.remove(os.path.join(scenarios_dir, escenario_sel))
-                if "datos_formulario" in st.session_state and st.session_state["datos_formulario"].get("nombre_escenario") == escenario_sel.replace(".json", ""):
-                    st.session_state.pop("datos_formulario")
+                if "datos_formulario" in st.session_state:
+                    prev_name = st.session_state["datos_formulario"].get("nombre_escenario", "")
+                    if prev_name == escenario_sel.replace(".json", ""):
+                        st.session_state.pop("datos_formulario")
+                        if "resultado" in st.session_state:
+                            st.session_state.pop("resultado")
                 st.rerun()
     else:
         st.info("No hay escenarios guardados aún.")
@@ -208,8 +224,15 @@ if submitted:
         st.session_state["datos_formulario"] = params.model_dump(mode="json")
 
         nombre_archivo = f"{nombre_esc.replace(' ', '_')}.json"
+        
+        data_to_save = {
+            "parametros": params.model_dump(mode="json")
+        }
+        if "resultado" in st.session_state:
+            data_to_save["resultado"] = dataclasses.asdict(st.session_state["resultado"])
+            
         with open(os.path.join(scenarios_dir, nombre_archivo), "w", encoding="utf-8") as f:
-            json.dump(params.model_dump(mode="json"), f, indent=2, ensure_ascii=False)
+            json.dump(data_to_save, f, indent=2, ensure_ascii=False)
 
         st.markdown(f"""
         <div class="alerta-success" style="margin-bottom:1.5rem">
