@@ -4,17 +4,19 @@
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-**Sistema de Apoyo a la Toma de Decisiones (DSS)** diseñado para optimizar la logística y programación de perforación de pilotes en proyectos de construcción civil. Este sistema permite modelar la incertidumbre inherente a la construcción mediante técnicas avanzadas de simulación.
+**Sistema de Apoyo a la Toma de Decisiones (DSS)** diseñado para optimizar la logística, la distribución de recursos y la programación de perforación de pilotes en proyectos de construcción civil pesada. Este sistema permite modelar la incertidumbre y variabilidad inherente de las operaciones en campo mediante técnicas avanzadas de simulación.
+
+---
 
 ## 📖 Resumen del Proyecto
-La construcción de fundaciones profundas (pilotes) está sujeta a alta incertidumbre ambiental y logística (tiempos de perforación, tráfico de mixers de concreto, fallos mecánicos). 
+La construcción de cimentaciones profundas (pilotes) está sujeta a una altísima incertidumbre geotécnica, climática y logística. Factores como la variabilidad del suelo, el tráfico de los camiones mezcladores (mixers) de concreto, tiempos de vaciado y fallos mecánicos imprevistos suelen retrasar las obras e inflar los presupuestos.
 
-Este sistema implementa un **Motor de Simulación de Eventos Discretos (DES)** junto con técnicas de simulación **Monte Carlo** para modelar el comportamiento estocástico de las operaciones en campo, permitiendo a gerentes e ingenieros anticipar cuellos de botella y optimizar la utilización de recursos antes del inicio de la obra.
+Este sistema implementa un **Motor de Simulación de Eventos Discretos (DES)** desarrollado sobre `SimPy`, acoplado a un motor de **Simulación Monte Carlo**. Esto permite a los gerentes de proyecto y a los ingenieros modelar matemáticamente el comportamiento del campo en cientos de réplicas virtuales, identificando cuellos de botella y optimizando el número de mixers antes de mover la primera pala de tierra en el mundo real.
 
 ---
 
 ## ⚙️ Metodología de Simulación (Lógica SimPy)
-Para garantizar la validez científica del modelo (crucial para tesis de ingeniería), el sistema sigue un flujo lógico de eventos discretos. A continuación se detalla el mapa de procesos que ejecuta el motor de SimPy:
+Para garantizar la validez científica del modelo (indispensable para validaciones de tesis y auditorías de proyectos), el motor simula el paso de tiempo físico modelando los pilotes y los mixers como entidades interdependientes:
 
 ```mermaid
 graph TD
@@ -41,151 +43,127 @@ graph TD
     MonteCarlo --> Export[Generar KPIs y Dashboard]
 ```
 
-### Justificación de Componentes Estocásticos
-1.  **Distribuciones de Probabilidad**: El sistema no utiliza tiempos fijos. Utiliza distribuciones **Lognormal** (para tiempos de construcción) y **Normal** (para logística), capturando la varianza real de la obra.
-2.  **Contención de Recursos**: SimPy modela la interacción entre la perforadora y la flota de mixers. Si la perforación es más rápida que el ciclo del mixer, el sistema detecta automáticamente un "Cuello de Botella".
-3.  **Análisis Monte Carlo**: Al ejecutar cientos de réplicas, generamos una distribución de resultados (P10, P50, P90), permitiendo una gestión de riesgos basada en probabilidades y no en deseos.
+### Componentes Estocásticos y Justificación Científica:
+1.  **Distribuciones de Probabilidad Flexibles**: En lugar de promedios fijos irreales, el usuario puede asignar distribuciones de probabilidad (como la **Lognormal** para excavaciones que suelen tener colas largas a la derecha, o **Normal**, **Exponencial** y **Triangular**) tanto para la Perforación como para el Colado (vaciado).
+2.  **Contención e Interdependencia de Recursos**: SimPy modela la perforadora y la flota de mixers como recursos limitados. Si la perforación es más rápida que el ciclo del mixer, se produce un retardo de colado, simulando con precisión el tiempo de espera del concreto fresco en obra.
+3.  **Análisis de Sensibilidad y Monte Carlo**: Al ejecutar hasta 500 réplicas del proyecto completo, el DSS calcula los percentiles estadísticos clave:
+    *   **P10 (Optimista)**: Solo hay un 10% de probabilidad de terminar antes de este tiempo.
+    *   **P50 (Caso Más Probable)**: Mediana estadística del proyecto.
+    *   **P90 (Conservador/Seguro)**: Existe un 90% de seguridad de culminar la obra dentro de este plazo.
 
 ---
 
-## ✨ Características Técnicas
-- **Arquitectura de 3 Capas**: Separación estricta entre Lógica de Negocio (Core), UI (App) y Persistencia (Data).
-- **Control Tower UI**: Interfaz Premium con diseño "SaaS Industrial" basada en **Glassmorphism**, optimizada para la visualización de KPIs críticos.
-- **Analítica Avanzada**: Histogramas con **Boxplots marginales** para análisis de cuartiles y cronogramas Gantt dinámicos.
+## 🧭 Recorrido por los Módulos de la Aplicación
 
-## 📊 Guía de Gráficos del Dashboard
+El sistema está estructurado en un flujo de **4 Módulos Interactivos** coordinados mediante un Stepper dinámico y un sidebar elegante:
 
-El **Módulo 3 — Dashboard Gerencial** presenta los resultados de la simulación mediante visualizaciones interactivas. A continuación se explica cada gráfico y cómo interpretarlo:
+### 🏠 Inicio — Control Tower
+*   Una cordial bienvenida con un resumen ejecutivo de las fases del sistema.
+*   **Stepper Inteligente**: Muestra visualmente tu progreso (Parametrización ➔ Simulación ➔ Dashboard) según la presencia de datos activos en la sesión.
 
-### 1. 📌 Indicadores Clave (KPI Cards)
-| Métrica | Descripción | Cómo interpretarla |
-|---|---|---|
-| **Duración P10** | Percentil 10 de la distribución de duración | Escenario optimista: solo 10% de probabilidad de terminar antes |
-| **Duración P50** | Mediana (percentil 50) | Estimación central — el caso más probable |
-| **Duración P90** | Percentil 90 | Escenario conservador: 90% de confianza de terminar antes |
-| **Utilización Mixer** | % de tiempo que los mixers están ocupados | >85% indica saturación del sistema de suministro |
-| **Cuello de botella** | Fase crítica que limita la velocidad | Identifica dónde enfocar mejoras |
+### ⚙️ Módulo 1 — Parametrización Estocástica
+Permite configurar el escenario de simulación en cuatro pestañas dedicadas:
+1.  **📐 Dimensiones**: Diámetro del pilote, longitud (profundidad) y la cantidad de pilotes a construir.
+2.  **⛰️ Geología y Entorno**: Tipo de suelo (seco, con presencia de agua, arcillas, rocas) que aplica automáticamente factores multiplicadores de dificultad física a los tiempos de perforación, además de la opción de lodo bentonítico.
+3.  **🚚 Logística**: Número de camiones mixers asignados, distancia del proveedor de concreto, velocidad media y desviación estándar del transporte.
+4.  **⏱️ Variables Estocásticas**:
+    *   **Perforación**: Permite definir la media ($\mu$), desviación estándar ($\sigma$) y su distribución de probabilidad.
+    *   **Colado**: Permite configurar de forma independiente la media, la **desviación estándar ($\sigma$ Colado)** y su correspondiente tipo de distribución.
+5.  **💾 Guardar Escenario**: Guarda todas las variables en un archivo físico `.json` dentro del servidor para su posterior análisis.
 
-### 2. 📊 Histograma con Boxplot Marginal (Distribución Monte Carlo)
-**Qué muestra:** La distribución de duraciones totales del proyecto obtenida tras N réplicas Monte Carlo.
+### 🚀 Módulo 2 — Simulación Monte Carlo
+*   **Ajuste del tamaño de muestra**: Permite elegir la cantidad de réplicas independientes (10 a 500).
+*   **Barra de Progreso y Logs en Tiempo Real**: Muestra el progreso de la simulación mediante una barra interactiva y una consola que reporta eventos críticos a nivel operativo.
+*   **Validaciones Físicas Pydantic**: El motor valida la congruencia matemática (por ejemplo, previniendo desviaciones estándar mayores que la media) antes de inicializar el cálculo de SimPy.
 
-**Cómo leerlo:**
-- **Barras del histograma:** Frecuencia de cada rango de duración
-- **Boxplot superior:** Muestra mediana (línea central), cuartiles Q1-Q3 (caja), y valores atípicos (puntos)
-- **Líneas verticales de color:**
-  - 🟢 **P10** (verde): Límite optimista
-  - 🟡 **P50** (amarillo): Mediana
-  - 🔴 **P90** (rojo): Límite conservador
-- **Ancho de la distribución:** Indica la incertidumbre. Una distribución ancha significa alta variabilidad en los resultados.
+### 📊 Módulo 3 — Dashboard Gerencial & Recomendaciones
+Aquí se despliega toda la analítica avanzada del proyecto:
 
-### 3. 📅 Cronograma Gantt (Réplica Base)
-**Qué muestra:** El cronograma detallado de cada pilote en la primera réplica de la simulación.
+1.  **💡 Sugerencias de Optimización (IA Analítica)**:
+    Un motor experto que evalúa automáticamente tus resultados y redacta recomendaciones específicas de acción:
+    *   *Saturación Logística*: Si la utilización de mixers es superior al 85%, te sugiere incorporar mixers para no estrangular el ritmo de la perforadora.
+    *   *Oportunidad de Ahorro*: Si la utilización de mixers es inferior al 45%, te sugiere reducir la flota de camiones contratados para ahorrar costos.
+    *   *Sincronización*: Alertas de tiempos muertos excesivos de los mixers en obra.
+    *   *Identificación de Restricciones*: Señala si el cuello de botella físico reside en el transporte o en la capacidad de la perforadora.
+    *   *Volatilidad*: Te avisa si hay una brecha mayor al 15% entre el escenario esperado (P50) y el pesimista (P90).
+2.  **📊 Distribución de Probabilidad Monte Carlo**: Histograma interactivo con las duraciones del proyecto, líneas guía para los percentiles P10, P50 y P90, y un área sombreada del intervalo de confianza.
+3.  **📅 Cronograma Gantt de la Réplica Base**: Línea de tiempo interactiva donde puedes seleccionar la fecha real de inicio y ver fase por fase la construcción de cada pilote.
+4.  **📈 Curva S (Avance Acumulado)**: Curva interactiva de avance del proyecto que muestra los tramos de alta productividad vs. las mesetas de inactividad.
+5.  **🎯 Radar de Eficiencia**: Perfil de cinco ejes (Perforación, Colado, Logística, Mixer, Predictibilidad) que mide la armonía del balance de tu sistema.
+6.  **🌪️ Diagrama de Tornado (Sensibilidad)**: Identifica cuál de los parámetros de entrada tiene mayor poder de influencia sobre el tiempo total del proyecto.
+7.  **🗂️ Detalle por Pilote**: Tabla interactiva con gradientes térmicos en la columna de esperas (de verde a rojo) y filtros por tiempos de espera o ciclo total.
+8.  **⚖️ Comparador de Escenarios**: Compara simultáneamente los parámetros de entrada de dos escenarios distintos grabados en el disco.
+9.  **📥 Exportador de Reportes Excel Profesional**: Botón para descargar de forma inmediata la base de datos a Excel.
 
-**Cómo leerlo:**
-- **Eje Y:** Número de pilote (P1, P2, P3...)
-- **Eje X:** Tiempo en horas desde el inicio
-- **Colores por fase:**
-  - 🔵 **Perforación:** Tiempo de excavación del pilote
-  - 🔴 **Espera Mixer:** Tiempo muerto esperando disponibilidad de concreto
-  -  **Colado:** Tiempo de vaciado de concreto
-- **Interpretación clave:** Si las barras rojas (espera) son largas, hay un cuello de botella logístico. Si las barras azules dominan, la perforación es la fase limitante.
+---
 
-### 4. 📈 Curva S — Avance Acumulado
-**Qué muestra:** El progreso acumulado del proyecto a lo largo del tiempo.
+## 📈 Reportes en Excel de Alta Legibilidad (Novedad)
+El sistema genera archivos de cálculo Excel (`.xlsx`) optimizados con un diseño corporativo en color azul EMCA, bordes limpios y fuentes Inter, estructurados en tres hojas de cálculo:
+1.  **📊 KPIs Gerenciales**: Resumen ejecutivo del escenario.
+2.  **📋 Detalle Pilotes**: Bitácora completa de la réplica base pilote por pilote.
+3.  **📈 Distribución Tiempos**: Los datos brutos ordenados de todas las corridas Monte Carlo.
 
-**Cómo leerlo:**
-- **Eje X:** Tiempo transcurrido (horas)
-- **Eje Y:** Porcentaje de pilotes completados (0-100%)
-- **Forma de la curva:**
-  - **Pendiente pronunciada:** Avance rápido (buena eficiencia)
-  - **Mesetas (tramos planos):** Periodos de estancamiento (cuellos de botella)
-  - **Punto de inflexión:** Momento donde la velocidad de avance cambia
-- **Uso práctico:** Permite estimar en qué momento del proyecto se completará un porcentaje dado de pilotes.
-
-### 5. 🎯 Radar de Eficiencia del Sistema
-**Qué muestra:** Un perfil multidimensional de la eficiencia del sistema en 5 dimensiones.
-
-**Ejes del radar:**
-| Eje | Qué mide | Valor ideal |
-|---|---|---|
-| **Eficiencia Perforación** | % del tiempo total dedicado a perforar | Alto (>40%) |
-| **Eficiencia Colado** | % del tiempo total dedicado a colar | Alto (>20%) |
-| **Eficiencia Logística** | % del tiempo sin esperas de mixer | Alto (>80%) |
-| **Utilización Mixer** | % de uso de la flota de mixers | 70-85% (ni muy bajo ni saturado) |
-| **Predictibilidad** | Inversa de la varianza (baja varianza = alta predictibilidad) | Alto (>70%) |
-
-**Cómo leerlo:** Un polígono más grande y regular indica un sistema más eficiente y balanceado. Un polígono irregular señala desbalances (ej: alta perforación pero baja logística).
-
-### 6. 🌪️ Diagrama de Tornado (Análisis de Sensibilidad)
-**Qué muestra:** Qué parámetros de entrada tienen mayor impacto en la duración del proyecto.
-
-**Cómo leerlo:**
-- **Barras horizontales:** Cada parámetro con su índice de sensibilidad (0 a 1)
-- **Barras más largas:** Mayor influencia en el resultado
-- **Colores:** Rojo = alta sensibilidad, Verde = baja sensibilidad
-- **Uso práctico:** Identifica en qué parámetros enfocar esfuerzos de optimización. Reducir la variabilidad del parámetro más sensible tendrá el mayor impacto en reducir la incertidumbre del proyecto.
-
-### 7. 🗂️ Tabla de Detalle por Pilote
-**Qué muestra:** Datos individuales de cada pilote con filtros interactivos.
-
-**Funcionalidades:**
-- **Filtro por espera mixer:** Aísla pilotes con problemas logísticos
-- **Filtro por ciclo total:** Identifica pilotes atípicos
-- **Ordenamiento:** Por cualquier columna (perforación, espera, colado, ciclo total)
-- **Heatmap:** Las celdas de "Espera Mixer" se colorean (rojo = alta espera, verde = baja)
-
-### 8. ️ Comparador de Escenarios
-**Qué muestra:** Comparación side-by-side de dos escenarios guardados.
-
-**Cómo usarlo:**
-1. Selecciona dos escenarios diferentes en los dropdowns
-2. Compara parámetros clave: pilotes, mixers, distancia, tiempos
-3. Útil para evaluar el impacto de cambios (ej: ¿qué pasa si agrego un mixer?)
+### ⏱️ Formato de Tiempos Amigable e Intuitivo
+Para evitar confusiones a los tomadores de decisiones que no están acostumbrados a leer tiempos en formato puramente decimal (como `4.80` horas), el exportador de Excel incorpora el formateador inteligente `_formatear_tiempo` que convierte los números en textos explícitos de **horas y minutos**:
+*   *Métricas de más de una hora:* `4.80 h` se exporta como **`4.80 h (4h 48min)`**.
+*   *Métricas de menos de una hora:* `0.75 h` se exporta automáticamente como **`0.75 h (45 min)`** para una lectura rápida.
+*   *Tiempos de espera nulos:* Un valor de `0.00` se exporta limpiamente como **`0 min`**.
 
 ---
 
 ## 🛠️ Stack Tecnológico
-| Capa | Tecnología |
-|---|---|
-| **Frontend** | `Streamlit` |
-| **Motor Simulación** | `SimPy` |
-| **Ciencia de Datos** | `NumPy`, `Pandas`, `SciPy` |
-| **Visualización** | `Plotly` |
-| **Validación** | `Pydantic v2` |
+*   **Frontend y Orquestación**: `Streamlit` (Premium Dark Theme)
+*   **Motor de Simulación**: `SimPy` (Entorno de eventos discretos con recursos compartidos)
+*   **Lógica Matemática e Incertidumbre**: `NumPy`, `Pandas`, `SciPy` (Generación de variables estocásticas)
+*   **Visualizaciones Dinámicas**: `Plotly Express` & `Plotly Graph Objects`
+*   **Integridad y Validaciones**: `Pydantic v2`
+*   **Generador de Reportes**: `Openpyxl`
 
 ---
 
 ## 🚀 Guía de Despliegue en Streamlit Community Cloud
 
-Para que cualquier persona (incluyendo tus tutores de tesis) pueda ver el sistema online, sigue estos pasos:
+Para compartir el sistema en la web de forma gratuita y que tus asesores o clientes puedan utilizarlo online:
 
-1.  **Subir a GitHub**:
-    *   Crea un repositorio nuevo en tu cuenta de GitHub (ej. `emca-stochastic-system`).
-    *   Sube todos los archivos de esta carpeta (asegúrate de incluir el archivo `.gitignore` para no subir la carpeta `.venv`).
+1.  **Subir el código a GitHub**:
+    *   Crea un repositorio público en tu cuenta de GitHub (ejemplo: `emca-stochastic-system`).
+    *   Inicializa git en la carpeta del proyecto, añade los archivos y haz push a tu rama `main` (recuerda que el archivo `.gitignore` ya está preconfigurado para evitar subir entornos virtuales u archivos basura de desarrollo).
 2.  **Conectar con Streamlit Cloud**:
-    *   Ve a [share.streamlit.io](https://share.streamlit.io/).
-    *   Conecta tu cuenta de GitHub.
-    *   Haz clic en **"New app"**.
-    *   Selecciona tu repositorio, la rama `main` y el archivo principal: `app/main.py`.
-3.  **Configuración**:
-    *   Streamlit detectará automáticamente el archivo `requirements.txt` e instalará todas las librerías necesarias.
-    *   En pocos minutos, tendrás una URL pública para compartir tu sistema.
+    *   Inicia sesión en [share.streamlit.io](https://share.streamlit.io/).
+    *   Haz clic en el botón **"New app"**.
+    *   Selecciona tu repositorio recién creado, la rama `main` y define la ruta del archivo de entrada principal como: **`app/main.py`**.
+3.  **Despliegue automático**:
+    *   Streamlit detectará el archivo `requirements.txt` en la raíz del proyecto e instalará automáticamente el stack tecnológico.
+    *   ¡En pocos minutos dispondrás de un enlace web seguro (HTTPS) para presentar tu sistema online!
 
 ---
 
-## ⚙️ Instalación Local (Desarrollo)
+## 💻 Instalación Local (Desarrollo)
+
+Si deseas probar y extender la funcionalidad del sistema en tu máquina local:
 
 ```bash
-# 1. Crear entorno virtual
-python -m venv .venv
-source .venv/bin/activate # o .venv\Scripts\activate en Windows
+# 1. Clonar el repositorio
+git clone https://github.com/tu-usuario/emca-stochastic-system.git
+cd emca-stochastic-system
 
-# 2. Instalar dependencias
+# 2. Configurar el entorno virtual de Python
+python -m venv .venv
+
+# 3. Activar el entorno
+# En Windows (Powershell):
+.venv\Scripts\Activate.ps1
+# En macOS/Linux:
+source .venv/bin/activate
+
+# 4. Instalar las dependencias del sistema
 pip install -r requirements.txt
 
-# 3. Ejecutar
+# 5. Lanzar el servidor de desarrollo local
 streamlit run app/main.py
 ```
 
+El navegador se abrirá automáticamente en la dirección local: `http://localhost:8501`.
+
 ---
-*Desarrollado para la optimización de procesos estocásticos en la industria de la construcción civil — EMCA.*
+*Desarrollado con altos estándares de excelencia analítica e industrial para la gestión de proyectos de infraestructura civil — EMCA.*
