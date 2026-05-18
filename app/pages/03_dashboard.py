@@ -112,6 +112,49 @@ if kpis.alerta_logistica:
     </div>
     """, unsafe_allow_html=True)
 
+# ══════════════════════════════════════════════════════════════
+# RECOMENDACIONES AUTOMÁTICAS (Sugerencias Inteligentes)
+# ══════════════════════════════════════════════════════════════
+st.markdown('<div class="section-title" style="margin-top:2rem"><h3>💡 Sugerencias de Optimización</h3><span class="badge">IA Analítica</span></div>', unsafe_allow_html=True)
+
+sugerencias = []
+
+# Logística y Mixers
+if kpis.utilizacion_mixer_pct > 85:
+    sugerencias.append(("⚠️", "Alta Saturación Logística", f"Los mixers tienen una utilización del {kpis.utilizacion_mixer_pct:.0f}%. Considere agregar 1 o 2 unidades a la flota para aliviar la saturación y proteger el avance."))
+elif kpis.utilizacion_mixer_pct < 45:
+    sugerencias.append(("💰", "Oportunidad de Ahorro", f"La utilización de la flota es baja ({kpis.utilizacion_mixer_pct:.0f}%). Podría reducir el número de mixers asignados para disminuir costos operativos diarios sin retrasar la obra."))
+
+if kpis.tiempo_espera_mixer_promedio_h > 1.5:
+    sugerencias.append(("🚚", "Sincronización de Despachos", f"El tiempo promedio de espera del mixer en obra es alto ({kpis.tiempo_espera_mixer_promedio_h:.1f}h). Mejorar la comunicación con la planta concretera para despachar justo al finalizar la perforación ahorrará costos de inactividad."))
+
+# Cuellos de botella
+if kpis.cuello_botella == "Transporte":
+    sugerencias.append(("⏱️", "Cuello de Botella en Suministro", "El ciclo de transporte (ida y vuelta) está dictando el ritmo de la obra. Explorar plantas concreteras más cercanas o aumentar la velocidad promedio mediante nuevas rutas reducirá drásticamente el tiempo total."))
+elif kpis.cuello_botella == "Perforación":
+    sugerencias.append(("🚜", "Cuello de Botella en Perforación", "La perforadora es la principal restricción del proyecto. Para acelerar el cronograma, evalúe incorporar un equipo de perforación secundario o extender la jornada laboral exclusivamente para esta fase."))
+
+# Riesgo / Incertidumbre
+incertidumbre = (kpis.tiempo_proyecto_p90_h - kpis.tiempo_proyecto_p50_h) / kpis.tiempo_proyecto_p50_h
+if incertidumbre > 0.15:
+    sugerencias.append(("📈", "Alta Volatilidad de Tiempos", f"Existe gran diferencia entre su escenario esperado (P50) y el pesimista (P90) ({incertidumbre:.0%} de desvío). Se recomienda asegurar contratos blindados para imprevistos climáticos o mecánicos."))
+elif incertidumbre < 0.05:
+    sugerencias.append(("🎯", "Alta Predictibilidad", "El sistema tiene una baja variabilidad. El cronograma actual es robusto, lo que facilita fijar compromisos agresivos con el cliente final."))
+
+html_sug = '<div style="display:flex; flex-direction:column; gap:1rem;">'
+for icon, title, text in sugerencias:
+    html_sug += f'''
+    <div class="kpi-card" style="display:flex; align-items:center; gap:1.2rem; padding:1.2rem; background:rgba(22,22,37,0.7); border-left:4px solid {ACC}; text-align:left;">
+        <div style="font-size:2rem;">{icon}</div>
+        <div>
+            <h4 style="margin:0; font-size:1.1rem; font-weight:600; color:{TX};">{title}</h4>
+            <p style="margin:0.3rem 0 0; font-size:0.95rem; color:{TX2}; line-height:1.4;">{text}</p>
+        </div>
+    </div>
+    '''
+html_sug += '</div>'
+st.markdown(html_sug, unsafe_allow_html=True)
+
 st.divider()
 
 # ══════════════════════════════════════════════════════════════
