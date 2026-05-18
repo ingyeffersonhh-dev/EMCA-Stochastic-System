@@ -55,12 +55,14 @@ with st.sidebar:
                 
                 if "parametros" in datos:
                     st.session_state["datos_formulario"] = datos["parametros"]
+                    st.session_state["parametros"] = ParametrosEntrada.model_validate(datos["parametros"])
                     if "resultado" in datos:
                         st.session_state["resultado"] = ResultadoSimulacion.from_dict(datos["resultado"])
                     elif "resultado" in st.session_state:
                         del st.session_state["resultado"]
                 else:
                     st.session_state["datos_formulario"] = datos
+                    st.session_state["parametros"] = ParametrosEntrada.model_validate(datos)
                     if "resultado" in st.session_state:
                         del st.session_state["resultado"]
                 st.rerun()
