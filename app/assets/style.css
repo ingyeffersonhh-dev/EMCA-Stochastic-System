@@ -367,11 +367,14 @@ a[class*="viewerBadge"],
 [data-testid="manage-app-button"],
 .stDeployButton,
 div[data-testid="stConnectionStatus"],
-div[class*="stConnectionStatus"] {
+div[class*="stConnectionStatus"],
+footer,
+[data-testid="stEmbedFooter"],
+.stEmbedFooter {
     display: none !important;
     visibility: hidden !important;
     opacity: 0 !important;
     height: 0 !important;
     width: 0 !important;
     pointer-events: none !important;
-}
+}
