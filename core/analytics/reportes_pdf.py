@@ -93,5 +93,4 @@ def generar_pdf_ejecutivo(resultado: ResultadoSimulacion, params: ParametrosEntr
          analisis += "\nRecomendación de Optimización: El sistema está balanceado operativamente. Mantenga el control de la dispersión en los tiempos de perforación para asegurar el cumplimiento del escenario P50."
          
     pdf.multi_cell(0, 8, analisis)
-    
-    return bytearray(pdf.output())
+    return bytes(pdf.output())

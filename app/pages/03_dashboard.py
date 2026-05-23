@@ -440,25 +440,38 @@ st.markdown('<div class="section-title"><h3>📥 Exportar Resultados</h3><span c
 
 col_exp1, col_exp2 = st.columns(2)
 
+# Pre-calcular archivos de exportación en memoria (operaciones ultrarrápidas de milisegundos)
+pdf_data = b""
+pdf_filename = f"EMCA_Reporte_{params.nombre_escenario.replace(' ', '_')}.pdf"
+try:
+    pdf_data = generar_pdf_ejecutivo(resultado, params)
+except Exception as e:
+    st.error(f"Error al preparar PDF: {str(e)}")
+
+excel_data = b""
+excel_filename = "EMCA_Reporte.xlsx"
+try:
+    ruta_excel = exportar_excel(resultado, directorio="exports")
+    excel_filename = os.path.basename(ruta_excel)
+    with open(ruta_excel, "rb") as f:
+        excel_data = f.read()
+except Exception as e:
+    st.error(f"Error al preparar Excel: {str(e)}")
+
 with col_exp1:
-    if st.button("📊 Generar Reporte Excel", use_container_width=True, type="secondary"):
-        with st.spinner("Generando Excel..."):
-            ruta = exportar_excel(resultado, directorio="exports")
-        with open(ruta, "rb") as f:
-            st.download_button(
-                label="⬇️ Descargar Excel", data=f.read(),
-                file_name=ruta.split("\\")[-1].split("/")[-1],
-                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                use_container_width=True,
-            )
+    st.download_button(
+        label="📊 Descargar Reporte Excel",
+        data=excel_data,
+        file_name=excel_filename,
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        use_container_width=True,
+    )
 
 with col_exp2:
-    if st.button("📄 Generar PDF (Ejecutivo)", use_container_width=True, type="primary"):
-        with st.spinner("Generando PDF..."):
-            pdf_bytes = generar_pdf_ejecutivo(resultado, params)
-        st.download_button(
-            label="⬇️ Descargar PDF", data=pdf_bytes,
-            file_name=f"EMCA_Reporte_{params.nombre_escenario.replace(' ', '_')}.pdf",
-            mime="application/pdf",
-            use_container_width=True,
-        )
+    st.download_button(
+        label="📄 Descargar PDF (Ejecutivo)",
+        data=pdf_data,
+        file_name=pdf_filename,
+        mime="application/pdf",
+        use_container_width=True,
+    )
