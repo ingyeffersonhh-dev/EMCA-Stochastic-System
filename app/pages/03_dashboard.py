@@ -409,7 +409,8 @@ if len(archivos) >= 2:
         with open(os.path.join(scenarios_dir, esc1), encoding="utf-8") as f: d1 = json.load(f)
         with open(os.path.join(scenarios_dir, esc2), encoding="utf-8") as f: d2 = json.load(f)
 
-        for col, d in [(cc1, d1), (cc2, d2)]:
+        for col, raw_d in [(cc1, d1), (cc2, d2)]:
+            d = raw_d["parametros"] if "parametros" in raw_d else raw_d
             with col:
                 st.markdown(f"""
                 <div class="preview-card">

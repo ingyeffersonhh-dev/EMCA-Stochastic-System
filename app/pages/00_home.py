@@ -148,9 +148,13 @@ if archivos:
             try:
                 with open(fp, encoding="utf-8") as f:
                     d = json.load(f)
-                nombre = d.get("nombre_escenario", archivo.replace(".json", ""))
-                pilotes = d.get("cantidad_pilotes", "?")
-                mixers = d.get("num_mixers", "?")
+                
+                # Soportar estructura antigua y nueva (anidada bajo 'parametros')
+                p_dict = d["parametros"] if "parametros" in d else d
+                
+                nombre = p_dict.get("nombre_escenario", archivo.replace(".json", ""))
+                pilotes = p_dict.get("cantidad_pilotes", "?")
+                mixers = p_dict.get("num_mixers", "?")
             except Exception:
                 nombre, pilotes, mixers = archivo.replace(".json", ""), "?", "?"
 
