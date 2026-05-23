@@ -131,9 +131,9 @@ with st.form("form_parametros", clear_on_submit=False):
         """, unsafe_allow_html=True)
 
     with tab2:
-        c4, c5 = st.columns([1.5, 1])
-        with c4:
-            st.markdown('<div class="section-title"><h3>Condiciones del Terreno</h3></div>', unsafe_allow_html=True)
+        st.markdown('<div class="section-title"><h3>🌍 Condiciones del Terreno</h3></div>', unsafe_allow_html=True)
+        col_t1, col_t2 = st.columns([2, 1])
+        with col_t1:
             suelo_opts = ["suelo_seco", "suelo_agua"]
             suelo_lbls = {"suelo_seco": "Suelo Seco", "suelo_agua": "Suelo con Agua"}
             suelo_facts = {"suelo_seco": 1.0, "suelo_agua": 1.35}
@@ -148,20 +148,21 @@ with st.form("form_parametros", clear_on_submit=False):
             sc = "soil-easy" if factor <= 1.1 else "soil-hard"
             
             st.markdown(f'<div style="margin-top:-.5rem;margin-bottom:1rem"><span class="soil-indicator {sc}">{"🟢" if factor<=1.1 else "🔵"} Dificultad: ×{factor}</span></div>', unsafe_allow_html=True)
+        with col_t2:
+            st.markdown("<div style='height:15px'></div>", unsafe_allow_html=True)  # Spacer to align with radio
             uso_lodo = st.checkbox("Usar lodo bentonítico", value=prev.get("uso_lodo_bentonitico", True))
 
-        with c5:
-            st.markdown('<div class="section-title"><h3>Velocidad</h3></div>', unsafe_allow_html=True)
-            vel_media = st.number_input("V. media (km/h)", 10.0, 119.0, value=prev.get("velocidad_transporte_kmh_media", 60.0), step=5.0)
-            vel_std = st.number_input("Desv. Est. (km/h)", 1.0, 30.0, value=prev.get("velocidad_transporte_kmh_std", 10.0), step=1.0)
-
-        st.markdown('<div class="section-title"><h3>Logística de Suministro</h3></div>', unsafe_allow_html=True)
-        c6, c7, c8 = st.columns(3)
-        with c6:
-            num_mixers = st.slider("Mixers activos", 1, 10, value=prev.get("num_mixers", 2))
-        with c7:
+        st.markdown('<div class="section-title"><h3>🚛 Logística de Suministro</h3></div>', unsafe_allow_html=True)
+        num_mixers = st.slider("Mixers activos", 1, 10, value=prev.get("num_mixers", 2))
+        
+        c_l1, c_l2, c_l3, c_l4 = st.columns(4)
+        with c_l1:
             distancia = st.number_input("Distancia a planta (km)", 1.0, 199.0, value=prev.get("distancia_proveedor_km", 30.0), step=1.0)
-        with c8:
+        with c_l2:
+            vel_media = st.number_input("V. media de transporte (km/h)", 10.0, 119.0, value=prev.get("velocidad_transporte_kmh_media", 60.0), step=5.0)
+        with c_l3:
+            vel_std = st.number_input("Desv. Est. de velocidad (km/h)", 1.0, 30.0, value=prev.get("velocidad_transporte_kmh_std", 10.0), step=1.0)
+        with c_l4:
             horas_dia = st.number_input("Jornada (h/día)", 4.0, 24.0, value=prev.get("horas_por_dia", 8.0), step=0.5)
 
         t_transp = (distancia * 2) / vel_media
