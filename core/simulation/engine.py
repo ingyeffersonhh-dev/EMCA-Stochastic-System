@@ -5,7 +5,7 @@ Orquesta el proceso completo de perforación y colado de pilotes.
 """
 from __future__ import annotations
 
-from typing import List
+from typing import List, Callable, Optional
 import numpy as np
 import simpy
 from loguru import logger
@@ -67,6 +67,7 @@ def ejecutar_simulacion(
     params: ParametrosEntrada,
     n_replicas: int = 500,
     seed: int = 42,
+    progress_callback: Optional[Callable[[int, int], None]] = None
 ) -> ResultadoSimulacion:
     """
     Ejecuta n réplicas de Monte Carlo sobre el motor de eventos discretos SimPy.
@@ -127,6 +128,9 @@ def ejecutar_simulacion(
     tiempos_mixer_ocupado_all: List[float] = []
 
     for r in range(n_replicas):
+        if progress_callback and r % max(1, n_replicas // 100) == 0:
+            progress_callback(r, n_replicas)
+            
         env = simpy.Environment()
         mixer_resource = simpy.Resource(env, capacity=params.num_mixers)
         log_replica: List[EventoPilote] = []
@@ -183,6 +187,12 @@ def ejecutar_simulacion(
     else:
         cuello = "sin cuello de botella crítico"
 
+    # Cálculos Financieros
+    costo_p50 = (pcts["p50"] * params.costo_hora_perforadora_usd) + (pcts["p50"] * params.num_mixers * params.costo_hora_mixer_usd)
+    costo_p90 = (pcts["p90"] * params.costo_hora_perforadora_usd) + (pcts["p90"] * params.num_mixers * params.costo_hora_mixer_usd)
+    espera_total_promedio = float(np.sum(tiempos_espera_mixers_all)) / n_replicas if n_replicas > 0 else 0.0
+    costo_inactividad = espera_total_promedio * params.costo_hora_standby_mixer_usd
+
     kpis = KPIs(
         tiempo_proyecto_p10_h=pcts["p10"],
         tiempo_proyecto_p50_h=pcts["p50"],
@@ -201,6 +211,9 @@ def ejecutar_simulacion(
         cuello_botella=cuello,
         alerta_logistica=espera_media > 2.0,
         alerta_capacidad_mixer=utilizacion > 85.0,
+        costo_proyecto_p50_usd=costo_p50,
+        costo_proyecto_p90_usd=costo_p90,
+        costo_inactividad_mixers_usd=costo_inactividad,
     )
 
     logger.success(

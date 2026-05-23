@@ -109,6 +109,11 @@ class ParametrosEntrada(BaseModel):
     # --- Configuración de jornada laboral ---
     horas_por_dia: float = Field(default=8.0, gt=0.0, lt=24.0)
 
+    # --- Costos Operativos (Nuevos) ---
+    costo_hora_perforadora_usd: float = Field(default=150.0, ge=0.0)
+    costo_hora_mixer_usd: float = Field(default=80.0, ge=0.0)
+    costo_hora_standby_mixer_usd: float = Field(default=40.0, ge=0.0)
+
     # --- Metadatos ---
     nombre_escenario: str = Field(default="Escenario Base", max_length=100)
     notas: Optional[str] = Field(default=None, max_length=500)

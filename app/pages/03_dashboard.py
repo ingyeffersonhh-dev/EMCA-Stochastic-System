@@ -13,6 +13,7 @@ import os
 from core.analytics.kpis import resumen_estadistico, tabla_eventos_df, distribucion_tiempos_df
 from core.analytics.gantt import generar_gantt_df, generar_curva_s
 from core.analytics.exportar import exportar_excel, _formatear_tiempo
+from core.analytics.reportes_pdf import generar_pdf_ejecutivo
 
 # ── Design tokens ──────────────────────────────────────────────
 TX  = "#E2E8F0"
@@ -99,6 +100,24 @@ st.markdown(f"""
         <div class="kpi-delta {'down' if kpis.utilizacion_mixer_pct > 85 else 'up'}">
             {'⚠️ Saturado' if kpis.utilizacion_mixer_pct > 85 else '✓ Normal'}
         </div>
+    </div>
+</div>
+
+<div class="kpi-grid" style="grid-template-columns:repeat(3,1fr); margin-top: 1rem;">
+    <div class="kpi-card" style="border-left: 4px solid #FFD700;">
+        <div class="kpi-label">💰 Costo Proyecto P50</div>
+        <div class="kpi-value" style="font-size:1.6rem">${getattr(kpis, 'costo_proyecto_p50_usd', 0.0):,.0f}</div>
+        <div class="kpi-delta neutral">Presupuesto Esperado</div>
+    </div>
+    <div class="kpi-card" style="border-left: 4px solid #FF8C00;">
+        <div class="kpi-label">💰 Costo Proyecto P90</div>
+        <div class="kpi-value" style="font-size:1.6rem">${getattr(kpis, 'costo_proyecto_p90_usd', 0.0):,.0f}</div>
+        <div class="kpi-delta down">Presupuesto Pesimista</div>
+    </div>
+    <div class="kpi-card" style="border-left: 4px solid #FF4500;">
+        <div class="kpi-label">⚠️ Costo Inactividad Mixers</div>
+        <div class="kpi-value" style="font-size:1.6rem">${getattr(kpis, 'costo_inactividad_mixers_usd', 0.0):,.0f}</div>
+        <div class="kpi-delta down">Pérdida por tiempos de espera</div>
     </div>
 </div>
 """, unsafe_allow_html=True)
@@ -417,15 +436,29 @@ st.divider()
 # ══════════════════════════════════════════════════════════════
 # EXPORT
 # ══════════════════════════════════════════════════════════════
-st.markdown('<div class="section-title"><h3>📥 Exportar Resultados</h3><span class="badge">Excel</span></div>', unsafe_allow_html=True)
+st.markdown('<div class="section-title"><h3>📥 Exportar Resultados</h3><span class="badge">Excel & PDF</span></div>', unsafe_allow_html=True)
 
-if st.button("📊 Descargar Reporte Excel", use_container_width=True, type="secondary"):
-    with st.spinner("Generando..."):
-        ruta = exportar_excel(resultado, directorio="exports")
-    with open(ruta, "rb") as f:
+col_exp1, col_exp2 = st.columns(2)
+
+with col_exp1:
+    if st.button("📊 Generar Reporte Excel", use_container_width=True, type="secondary"):
+        with st.spinner("Generando Excel..."):
+            ruta = exportar_excel(resultado, directorio="exports")
+        with open(ruta, "rb") as f:
+            st.download_button(
+                label="⬇️ Descargar Excel", data=f.read(),
+                file_name=ruta.split("\\")[-1].split("/")[-1],
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                use_container_width=True,
+            )
+
+with col_exp2:
+    if st.button("📄 Generar PDF (Ejecutivo)", use_container_width=True, type="primary"):
+        with st.spinner("Generando PDF..."):
+            pdf_bytes = generar_pdf_ejecutivo(resultado, params)
         st.download_button(
-            label="⬇️ Descargar Excel", data=f.read(),
-            file_name=ruta.split("\\")[-1].split("/")[-1],
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            label="⬇️ Descargar PDF", data=pdf_bytes,
+            file_name=f"EMCA_Reporte_{params.nombre_escenario.replace(' ', '_')}.pdf",
+            mime="application/pdf",
             use_container_width=True,
         )

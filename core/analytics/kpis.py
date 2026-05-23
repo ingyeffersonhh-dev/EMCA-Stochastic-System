@@ -40,6 +40,10 @@ def resumen_estadistico(resultado: ResultadoSimulacion) -> Dict[str, Any]:
         "Cuello de botella": k.cuello_botella,
         "Alerta logística": "🔴 SÍ" if k.alerta_logistica else "🟢 NO",
         "Alerta capacidad mixer": "🔴 SÍ" if k.alerta_capacidad_mixer else "🟢 NO",
+        # Financieros
+        "Costo Total P50 ($)": round(k.costo_proyecto_p50_usd, 2),
+        "Costo Total P90 ($)": round(k.costo_proyecto_p90_usd, 2),
+        "Costo por Inactividad Logística ($)": round(k.costo_inactividad_mixers_usd, 2),
     }
 
 

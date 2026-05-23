@@ -80,6 +80,11 @@ class KPIs:
     alerta_logistica: bool = False
     alerta_capacidad_mixer: bool = False
 
+    # Costos operativos
+    costo_proyecto_p50_usd: float = 0.0
+    costo_proyecto_p90_usd: float = 0.0
+    costo_inactividad_mixers_usd: float = 0.0
+
     # Días laborables (asume turno de 8h, 5 días/semana)
     @property
     def dias_p50(self) -> float:

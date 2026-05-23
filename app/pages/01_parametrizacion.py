@@ -103,7 +103,7 @@ prev = st.session_state.get("datos_formulario", {})
 # ── Form ───────────────────────────────────────────────────────
 with st.form("form_parametros", clear_on_submit=False):
 
-    tab1, tab2, tab3, tab4 = st.tabs(["📐 Geometría", "🌍 Entorno & Logística", "📊 Estocásticos", "💾 Guardar Escenario"])
+    tab1, tab2, tab3, tab4, tab5 = st.tabs(["📐 Geometría", "🌍 Entorno & Logística", "📊 Estocásticos", "💰 Costos", "💾 Guardar Escenario"])
     
     with tab1:
         st.markdown('<div class="section-title"><h3>Dimensiones y Cantidades</h3></div>', unsafe_allow_html=True)
@@ -219,6 +219,16 @@ with st.form("form_parametros", clear_on_submit=False):
         """, unsafe_allow_html=True)
 
     with tab4:
+        st.markdown('<div class="section-title"><h3>💰 Parámetros de Costo Operativo (USD)</h3></div>', unsafe_allow_html=True)
+        c_cost1, c_cost2, c_cost3 = st.columns(3)
+        with c_cost1:
+            costo_perf = st.number_input("Costo Perforadora ($/h)", 0.0, 5000.0, value=prev.get("costo_hora_perforadora_usd", 150.0), step=10.0)
+        with c_cost2:
+            costo_mixer = st.number_input("Costo Mixer Activo ($/h)", 0.0, 1000.0, value=prev.get("costo_hora_mixer_usd", 80.0), step=10.0)
+        with c_cost3:
+            costo_standby = st.number_input("Costo Mixer Inactivo ($/h)", 0.0, 1000.0, value=prev.get("costo_hora_standby_mixer_usd", 40.0), step=5.0)
+
+    with tab5:
         st.markdown('<div class="section-title"><h3>🏷️ Identificación y Guardado</h3></div>', unsafe_allow_html=True)
         nombre_esc = st.text_input("Nombre de la configuración", value=prev.get("nombre_escenario", "Escenario Base"))
         notas = st.text_area("Observaciones", value=prev.get("notas", ""), height=80)
@@ -239,6 +249,9 @@ if submitted:
             tiempo_colado_min_media=float(t_colado_media), tiempo_colado_min_std=float(t_colado_std),
             dist_colado=TipoDistribucion(dist_colado),
             horas_por_dia=horas_dia,
+            costo_hora_perforadora_usd=costo_perf,
+            costo_hora_mixer_usd=costo_mixer,
+            costo_hora_standby_mixer_usd=costo_standby,
             nombre_escenario=nombre_esc, notas=notas or None,
         )
 
@@ -246,21 +259,34 @@ if submitted:
         st.session_state["datos_formulario"] = params.model_dump(mode="json")
 
         nombre_archivo = f"{nombre_esc.replace(' ', '_')}.json"
+        ruta_archivo = os.path.join(scenarios_dir, nombre_archivo)
         
-        data_to_save = {
-            "parametros": params.model_dump(mode="json")
-        }
-        if "resultado" in st.session_state:
-            data_to_save["resultado"] = dataclasses.asdict(st.session_state["resultado"])
-            
-        with open(os.path.join(scenarios_dir, nombre_archivo), "w", encoding="utf-8") as f:
-            json.dump(data_to_save, f, indent=2, ensure_ascii=False)
+        # Verificación de sobreescritura
+        if os.path.exists(ruta_archivo) and st.session_state.get("confirm_overwrite") != nombre_archivo:
+            st.markdown(f"""
+            <div class="alerta-roja" style="margin-bottom:1.5rem">
+                ⚠️ <strong>Aviso:</strong> El escenario '{nombre_esc}' ya existe. <br>
+                Haga clic nuevamente en <strong>Validar y Guardar</strong> para confirmar la sobreescritura.
+            </div>
+            """, unsafe_allow_html=True)
+            st.session_state["confirm_overwrite"] = nombre_archivo
+        else:
+            data_to_save = {
+                "parametros": params.model_dump(mode="json")
+            }
+            if "resultado" in st.session_state:
+                data_to_save["resultado"] = dataclasses.asdict(st.session_state["resultado"])
+                
+            with open(ruta_archivo, "w", encoding="utf-8") as f:
+                json.dump(data_to_save, f, indent=2, ensure_ascii=False)
+                
+            st.session_state["confirm_overwrite"] = None
 
-        st.markdown(f"""
-        <div class="alerta-success" style="margin-bottom:1.5rem">
-            ✅ Escenario validado y asegurado: <strong>{nombre_esc}</strong>.
-        </div>
-        """, unsafe_allow_html=True)
+            st.markdown(f"""
+            <div class="alerta-success" style="margin-bottom:1.5rem">
+                ✅ Escenario validado y asegurado: <strong>{nombre_esc}</strong>.
+            </div>
+            """, unsafe_allow_html=True)
 
         st.markdown(f"""
         <div class="kpi-grid">

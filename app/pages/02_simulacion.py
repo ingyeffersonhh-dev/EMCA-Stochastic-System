@@ -161,7 +161,26 @@ if ejecutar:
         stages[1] = ("⚙️", "Ejecutando motor SimPy...", True)
         render_stages(stages)
         
-        resultado = ejecutar_simulacion(params, n_replicas=n_replicas, seed=int(seed))
+        progress_bar = st.progress(0)
+        progress_text = st.empty()
+        
+        def update_progress(r, total):
+            pct = int((r / total) * 100)
+            progress_bar.progress(pct)
+            progress_text.caption(f"🚀 Simulando réplica {r} de {total} ({pct}%)")
+
+        resultado = ejecutar_simulacion(
+            params, 
+            n_replicas=n_replicas, 
+            seed=int(seed), 
+            progress_callback=update_progress
+        )
+        
+        progress_bar.progress(100)
+        progress_text.caption("🚀 Simulación completada (100%)")
+        time.sleep(0.3)
+        progress_bar.empty()
+        progress_text.empty()
         
         elapsed = time.time() - t0
         
