@@ -360,3 +360,18 @@ p,span,div,label,li { color:var(--tx1); }
     50% { opacity:.6; }
 }
 .animate-in { animation:fadeInUp .4s ease forwards; }
+
+/* ─── Ocultar Elementos de Streamlit Cloud y Estado ─── */
+div[class*="viewerBadge"],
+a[class*="viewerBadge"],
+[data-testid="manage-app-button"],
+.stDeployButton,
+div[data-testid="stConnectionStatus"],
+div[class*="stConnectionStatus"] {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    height: 0 !important;
+    width: 0 !important;
+    pointer-events: none !important;
+}
