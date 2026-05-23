@@ -11,6 +11,8 @@ ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if ROOT_DIR not in sys.path:
     sys.path.append(ROOT_DIR)
 
+from core.utils.auth import verify_jwt, inject_cookie_remover_js
+
 st.set_page_config(
     page_title="EMCA — Planificación de Pilotes",
     page_icon="🏗️",
@@ -84,21 +86,66 @@ logo_svg = f'''
 </svg>
 '''
 
-with st.sidebar:
-    st.markdown(
-        f'<div style="text-align:center;padding:1rem 0 .8rem;'
-        f'border-bottom:1px solid {brd};margin-bottom:.8rem">{logo_svg}</div>',
-        unsafe_allow_html=True,
-    )
+# --- Verificación de Sesión / JWT ---
+if "authenticated" not in st.session_state:
+    st.session_state["authenticated"] = False
 
-# ── Navigation ─────────────────────────────────────────────────
-pg_home = st.Page("pages/00_home.py", title="Inicio", icon="🏠", default=True)
-pg_param = st.Page("pages/01_parametrizacion.py", title="Parametrización", icon="📋")
-pg_sim   = st.Page("pages/02_simulacion.py", title="Simulación", icon="⚙️")
-pg_dash  = st.Page("pages/03_dashboard.py", title="Dashboard", icon="📊")
+# Si no está autenticado en la sesión, intentar leer la cookie JWT
+if not st.session_state["authenticated"]:
+    try:
+        cookies = st.context.cookies
+        session_token = cookies.get("emca_session")
+        if session_token:
+            payload = verify_jwt(session_token)
+            if payload:
+                st.session_state["authenticated"] = True
+                st.session_state["username"] = payload.get("username")
+                st.session_state["role"] = payload.get("role")
+                st.session_state["nombre_usuario"] = payload.get("nombre")
+    except Exception:
+        pass
 
-pg = st.navigation({
-    "Sistema": [pg_home],
-    "Módulos": [pg_param, pg_sim, pg_dash],
-})
-pg.run()
+if not st.session_state["authenticated"]:
+    # Ruteo restringido: Solo expone la pantalla de login
+    pg_login = st.Page("pages/login.py", title="Iniciar Sesión", icon="🔒")
+    pg = st.navigation([pg_login])
+    pg.run()
+else:
+    # Ruteo normal
+    with st.sidebar:
+        # Render del Logo
+        st.markdown(
+            f'<div style="text-align:center;padding:1rem 0 .8rem;'
+            f'border-bottom:1px solid {brd};margin-bottom:.8rem">{logo_svg}</div>',
+            unsafe_allow_html=True,
+        )
+        # Información de sesión activa
+        st.markdown(f"""
+            <div style="padding: 0.8rem; background: var(--card); border-radius: 12px; border: 1px solid var(--brd); margin-bottom: 1rem; text-align: center;">
+                <div style="font-size: 0.72rem; color: var(--tx2); text-transform: uppercase; letter-spacing: 0.8px;">Sesión Activa</div>
+                <div style="font-weight: 700; color: var(--acc); font-size: 0.88rem; margin-top: 0.2rem;">{st.session_state.get('nombre_usuario', 'Usuario')}</div>
+                <div style="font-size: 0.72rem; color: var(--tx3); margin-top: 0.1rem;">Rol: {str(st.session_state.get('role', '')).upper()}</div>
+            </div>
+        """, unsafe_allow_html=True)
+
+    pg_home = st.Page("pages/00_home.py", title="Inicio", icon="🏠", default=True)
+    pg_param = st.Page("pages/01_parametrizacion.py", title="Parametrización", icon="📋")
+    pg_sim   = st.Page("pages/02_simulacion.py", title="Simulación", icon="⚙️")
+    pg_dash  = st.Page("pages/03_dashboard.py", title="Dashboard", icon="📊")
+
+    pg = st.navigation({
+        "Sistema": [pg_home],
+        "Módulos": [pg_param, pg_sim, pg_dash],
+    })
+    pg.run()
+    
+    # Botón de cerrar sesión al final del sidebar
+    with st.sidebar:
+        st.markdown("<br><br>", unsafe_allow_html=True)
+        if st.button("🚪 Cerrar Sesión", use_container_width=True, type="secondary"):
+            st.session_state["authenticated"] = False
+            st.session_state.pop("username", None)
+            st.session_state.pop("role", None)
+            st.session_state.pop("nombre_usuario", None)
+            inject_cookie_remover_js()
+            st.rerun()

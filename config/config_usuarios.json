@@ -1,0 +1,14 @@
+{
+  "admin": {
+    "password_hash": "980024747733b72ace5fcdda58e852b24853e11a8c7493ebd0155f4f6d91b86f",
+    "salt": "f807c298bc78e566999fa68405234ff1",
+    "role": "admin",
+    "nombre": "Administrador General"
+  },
+  "operador": {
+    "password_hash": "7678d19079214043edea0cee59de37de85e22a6766d81d78f2650333e5318202",
+    "salt": "6af8131fa82f0e2003f6880b28cf2120",
+    "role": "operador",
+    "nombre": "Operador de Planta"
+  }
+}
