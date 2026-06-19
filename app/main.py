@@ -18,23 +18,26 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# ── Design Tokens ──────────────────────────────────────────────
-bg      = "#0B0B0F"
-bg2     = "#111118"
-card    = "#161625"
-card_h  = "#1E1E32"
-tx1     = "#E2E8F0"
-tx2     = "#8892B0"
-tx3     = "#4A5568"
-brd     = "rgba(255,255,255,0.06)"
-shd     = "rgba(0,0,0,0.45)"
-acc     = "#00E68A"
-acc2    = "#00CC7A"
-blue    = "#4D7CFE"
-yellow  = "#FFD43B"
-red     = "#FF6B6B"
-purple  = "#A855F7"
-cyan    = "#22D3EE"
+# ── Design Tokens — EMCA Brand Palette ────────────────────────
+# Background: deep navy blues that reflect the company's identity
+bg      = "#0A0F1E"   # darkest navy
+bg2     = "#0D1528"   # sidebar navy
+card    = "#111E38"   # card surface
+card_h  = "#162445"   # card hover
+tx1     = "#E8EDF5"   # primary text (slightly warm white)
+tx2     = "#8A98B8"   # secondary text
+tx3     = "#3D4F70"   # muted text
+brd     = "rgba(76,139,245,0.12)"  # borders with brand blue tint
+shd     = "rgba(0,0,0,0.5)"
+# Brand colors from logo
+acc     = "#4C8BF5"   # bright corporate blue (primary interactive)
+acc2    = "#3A79E8"   # primary button hover
+red     = "#CC1E2A"   # EMCA red (alerts, accents)
+red2    = "#E8232F"   # red hover
+blue    = "#4C8BF5"   # alias for acc
+yellow  = "#F5A623"   # warm amber (warnings, neutral)
+cyan    = "#56B8E8"   # light blue (data highlights)
+purple  = "#7C6FD4"   # kept for secondary charts
 
 css = f"""
 <style>
@@ -55,9 +58,9 @@ html, body, [class*="css"] {{ font-family:'Inter',sans-serif; }}
     border-radius:10px; margin:2px 8px; padding:6px 12px;
     transition:all .2s ease;
 }}
-[data-testid="stSidebarNav"] a:hover {{ background:rgba(0,230,138,.08); }}
+[data-testid="stSidebarNav"] a:hover {{ background:rgba(76,139,245,.1); }}
 [data-testid="stSidebarNav"] a[aria-selected="true"] {{
-    background:rgba(0,230,138,.12)!important;
+    background:rgba(76,139,245,.15)!important;
     border-left:3px solid {acc};
 }}
 
@@ -78,7 +81,7 @@ div[data-testid="metric-container"]::before {{
 }}
 div[data-testid="metric-container"]:hover {{
     transform:translateY(-3px);
-    box-shadow:0 8px 30px {shd},0 0 20px rgba(0,230,138,.06);
+    box-shadow:0 8px 30px {shd},0 0 20px rgba(76,139,245,.1);
 }}
 div[data-testid="metric-container"] label {{
     color:{tx2}!important;font-size:.78rem!important;
@@ -94,15 +97,15 @@ div[data-testid="metric-container"] [data-testid="stMetricDelta"] {{
 /* ═══ Buttons ═══ */
 .stButton > button {{
     background:linear-gradient(135deg,{acc},{acc2})!important;
-    color:#0B0B0F!important; border:none!important;
+    color:#FFFFFF!important; border:none!important;
     border-radius:12px; font-weight:700; font-size:.9rem;
     letter-spacing:.3px; padding:.6rem 1.5rem;
     transition:all .25s cubic-bezier(.4,0,.2,1);
-    box-shadow:0 4px 15px rgba(0,230,138,.25);
+    box-shadow:0 4px 15px rgba(76,139,245,.3);
 }}
 .stButton > button:hover {{
     transform:translateY(-2px)!important;
-    box-shadow:0 8px 25px rgba(0,230,138,.35)!important;
+    box-shadow:0 8px 25px rgba(76,139,245,.4)!important;
     filter:brightness(1.1);
 }}
 .stButton > button[kind="secondary"],
@@ -114,7 +117,7 @@ div[data-testid="metric-container"] [data-testid="stMetricDelta"] {{
 .stButton > button[kind="secondary"]:hover,
 .stButton > button[data-testid="stBaseButton-secondary"]:hover {{
     background:{card_h}!important;
-    border-color:rgba(0,230,138,.3)!important;
+    border-color:rgba(76,139,245,.4)!important;
 }}
 
 /* ═══ Tabs ═══ */
@@ -128,9 +131,9 @@ div[data-testid="metric-container"] [data-testid="stMetricDelta"] {{
     font-weight:500; transition:all .2s ease;
 }}
 .stTabs [aria-selected="true"] {{
-    background:rgba(0,230,138,.12)!important;
+    background:rgba(76,139,245,.15)!important;
     color:{acc}!important; font-weight:700;
-    box-shadow:0 2px 8px rgba(0,230,138,.1);
+    box-shadow:0 2px 8px rgba(76,139,245,.15);
     border-bottom:none!important;
 }}
 
@@ -153,7 +156,7 @@ p,span,div,label,li {{ color:{tx1}; }}
 .stTextInput > div > div > input:focus,
 .stNumberInput > div > div > input:focus {{
     border-color:{acc}!important;
-    box-shadow:0 0 0 2px rgba(0,230,138,.15)!important;
+    box-shadow:0 0 0 2px rgba(76,139,245,.2)!important;
 }}
 .stSlider > div > div > div > div {{ background:{acc}!important; }}
 .stCheckbox > label > div {{ background:{card}!important; border-color:{brd}!important; }}
@@ -422,21 +425,78 @@ logo_svg = f'''
 </svg>
 '''
 
+# Detectar si estamos ejecutando desde la raíz o desde la carpeta app/
+base_dir = os.path.dirname(__file__)
+if not base_dir.endswith("app") and os.path.exists(os.path.join(base_dir, "app")):
+    assets_dir = os.path.join(base_dir, "app", "assets")
+    pages_dir = os.path.join(base_dir, "app", "pages")
+else:
+    assets_dir = os.path.join(base_dir, "assets")
+    pages_dir = os.path.join(base_dir, "pages")
+
 with st.sidebar:
-    st.markdown(
-        f'<div style="text-align:center;padding:1rem 0 .8rem;'
-        f'border-bottom:1px solid {brd};margin-bottom:.8rem">{logo_svg}</div>',
-        unsafe_allow_html=True,
-    )
+    logo_path = os.path.join(assets_dir, "logo.png")
+    if os.path.exists(logo_path):
+        st.markdown(
+            f'<div style="padding:1rem 0 .8rem;border-bottom:1px solid {brd};margin-bottom:.8rem;text-align:center">',
+            unsafe_allow_html=True
+        )
+        st.image(logo_path, use_container_width=True)
+        st.markdown("</div>", unsafe_allow_html=True)
+    else:
+        st.markdown(
+            f'<div style="text-align:center;padding:1rem 0 .8rem;'
+            f'border-bottom:1px solid {brd};margin-bottom:.8rem">'
+            f'<span style="font-size:1.4rem;font-weight:800;color:{acc}">🏗️ EMCA</span></div>',
+            unsafe_allow_html=True,
+        )
+
+    # ── Global state banner
+    escenario_activo = None
+    sim_ok = False
+    if "parametros" in st.session_state:
+        escenario_activo = st.session_state["parametros"].nombre_escenario
+        sim_ok = "resultado" in st.session_state
+
+    if escenario_activo:
+        sim_icon  = "✅" if sim_ok else "⏳"
+        sim_label = "Simulado" if sim_ok else "Pendiente"
+        sim_color = acc if sim_ok else yellow
+        st.markdown(f"""
+        <div style="background:rgba(76,139,245,0.07);border:1px solid rgba(76,139,245,0.18);
+            border-radius:12px;padding:.85rem 1rem;margin-bottom:.8rem">
+            <div style="font-size:.68rem;color:{tx2};text-transform:uppercase;letter-spacing:.7px;
+                font-weight:600;margin-bottom:.4rem">Escenario activo</div>
+            <div style="font-weight:700;color:{tx1};font-size:.88rem;margin-bottom:.35rem
+                ">{escenario_activo}</div>
+            <div style="font-size:.78rem;color:{sim_color};font-weight:600">
+                {sim_icon} Simulación: {sim_label}
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+    else:
+        st.markdown(f"""
+        <div style="background:rgba(245,166,35,0.06);border:1px solid rgba(245,166,35,0.18);
+            border-radius:12px;padding:.85rem 1rem;margin-bottom:.8rem">
+            <div style="font-size:.78rem;color:{yellow};font-weight:600">
+                ⚠️ Sin escenario activo
+            </div>
+            <div style="font-size:.75rem;color:{tx2};margin-top:.2rem">
+                Configurá uno en Parametrización
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
 
 # ── Navigation ─────────────────────────────────────────────────
-pg_home = st.Page("pages/00_home.py", title="Inicio", icon="🏠", default=True)
-pg_param = st.Page("pages/01_parametrizacion.py", title="Parametrización", icon="📋")
-pg_sim   = st.Page("pages/02_simulacion.py", title="Simulación", icon="⚙️")
-pg_dash  = st.Page("pages/03_dashboard.py", title="Dashboard", icon="📊")
+pg_home  = st.Page(os.path.join(pages_dir, "00_home.py"), title="Inicio", icon="🏠", default=True)
+pg_param = st.Page(os.path.join(pages_dir, "01_parametrizacion.py"), title="Parametrización", icon="📋")
+pg_sim   = st.Page(os.path.join(pages_dir, "02_simulacion.py"), title="Simulación", icon="⚙️")
+pg_dash  = st.Page(os.path.join(pages_dir, "03_dashboard.py"), title="Dashboard", icon="📊")
+pg_comp  = st.Page(os.path.join(pages_dir, "04_comparacion.py"), title="Comparación", icon="🔍")
 
 pg = st.navigation({
     "Sistema": [pg_home],
     "Módulos": [pg_param, pg_sim, pg_dash],
+    "Análisis": [pg_comp],
 })
 pg.run()

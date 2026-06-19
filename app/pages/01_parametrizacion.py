@@ -1,7 +1,7 @@
 """
 app/pages/01_parametrizacion.py
-Módulo 1: Formulario de parametrización operativa con validación en tiempo real.
-Premium dark theme layout.
+Module 1: Parametrization — redesigned with step-by-step UX,
+visual sliders, and contextual real-time feedback.
 """
 import streamlit as st
 import json
@@ -12,6 +12,7 @@ from core.models.parametros import ParametrosEntrada, TipoSuelo, TipoDistribucio
 from core.models.resultados import ResultadoSimulacion
 import dataclasses
 
+# ── Page header ────────────────────────────────────────────────
 st.markdown("""
 <div style="margin-bottom:1.5rem">
     <h1 style="margin:0;font-size:1.8rem;font-weight:800">📋 Parámetros de Operación</h1>
@@ -52,18 +53,18 @@ with st.sidebar:
     if archivos:
         default_idx = 0
         if "datos_formulario" in st.session_state:
-            nombre_esc = st.session_state["datos_formulario"].get("nombre_escenario", "")
-            nombre_file = f"{nombre_esc.replace(' ', '_')}.json"
-            if nombre_file in archivos:
-                default_idx = archivos.index(nombre_file) + 1
-                
+            nombre_esc_prev = st.session_state["datos_formulario"].get("nombre_escenario", "")
+            nombre_file_prev = f"{nombre_esc_prev.replace(' ', '_')}.json"
+            if nombre_file_prev in archivos:
+                default_idx = archivos.index(nombre_file_prev) + 1
+
         escenario_sel = st.selectbox("Seleccione un escenario:", ["— Nuevo —"] + archivos, index=default_idx)
         if escenario_sel != "— Nuevo —":
             c_load, c_del = st.columns(2)
             if c_load.button("📂 Cargar", use_container_width=True):
                 with open(os.path.join(scenarios_dir, escenario_sel), encoding="utf-8") as f:
                     datos = json.load(f)
-                
+
                 tiene_sim = False
                 if "parametros" in datos:
                     st.session_state["datos_formulario"] = datos["parametros"]
@@ -78,14 +79,14 @@ with st.sidebar:
                     st.session_state["parametros"] = ParametrosEntrada.model_validate(datos)
                     if "resultado" in st.session_state:
                         del st.session_state["resultado"]
-                
-                nombre_esc = st.session_state["parametros"].nombre_escenario
+
+                nombre_cargado = st.session_state["parametros"].nombre_escenario
                 if tiene_sim:
-                    st.session_state["mensaje_carga"] = f'<div class="alerta-success" style="margin-bottom:1.5rem">📂 Escenario <strong>{nombre_esc}</strong> cargado con éxito. Resultados de simulación listos para ver en el Módulo 3.</div>'
+                    st.session_state["mensaje_carga"] = f'<div class="alerta-success" style="margin-bottom:1.5rem">📂 Escenario <strong>{nombre_cargado}</strong> cargado con éxito. Resultados de simulación listos para ver en el Módulo 3.</div>'
                 else:
-                    st.session_state["mensaje_carga"] = f'<div class="alerta-info" style="margin-bottom:1.5rem">📂 Escenario <strong>{nombre_esc}</strong> cargado. Nota: Este escenario no tiene una simulación guardada. Por favor, ejecute la simulación en el Módulo 2 para persistir los resultados.</div>'
+                    st.session_state["mensaje_carga"] = f'<div class="alerta-info" style="margin-bottom:1.5rem">📂 Escenario <strong>{nombre_cargado}</strong> cargado. Por favor, ejecute la simulación en el Módulo 2 para persistir los resultados.</div>'
                 st.rerun()
-            
+
             if c_del.button("🗑️ Borrar", use_container_width=True, type="secondary"):
                 os.remove(os.path.join(scenarios_dir, escenario_sel))
                 if "datos_formulario" in st.session_state:
@@ -100,128 +101,295 @@ with st.sidebar:
 
 prev = st.session_state.get("datos_formulario", {})
 
-# ── Form ───────────────────────────────────────────────────────
+# ════════════════════════════════════════════════════════════════
+# FORM
+# ════════════════════════════════════════════════════════════════
 with st.form("form_parametros", clear_on_submit=False):
 
-    tab1, tab2, tab3, tab4 = st.tabs(["📐 Geometría", "🌍 Entorno & Logística", "📊 Estocásticos", "💾 Guardar Escenario"])
-    
-    with tab1:
-        st.markdown('<div class="section-title"><h3>Dimensiones y Cantidades</h3></div>', unsafe_allow_html=True)
+    tab_geom, tab_log, tab_estoc, tab_save = st.tabs([
+        "📏 1. Geometría", 
+        "🌍 2. Logística", 
+        "⏱️ 3. Estocásticos", 
+        "💾 4. Guardar"
+    ])
+
+    with tab_geom:
+        st.markdown("""
+        <div style="margin-bottom: 1.2rem;">
+            <div style="font-weight:700;font-size:1rem;color:#E2E8F0">Geometría del Pilote</div>
+            <div style="font-size:.8rem;color:#8892B0">Defina las dimensiones físicas y la cantidad de pilotes del proyecto</div>
+        </div>
+        """, unsafe_allow_html=True)
+
         c1, c2, c3 = st.columns(3)
         with c1:
-            diametro = st.number_input("Diámetro del pilote (m)", 0.3, 2.0,
-                value=prev.get("diametro_m", 0.6), step=0.05)
+            diametro = st.slider(
+                "Diámetro (m)",
+                min_value=0.3, max_value=2.0,
+                value=float(prev.get("diametro_m", 0.6)),
+                step=0.05,
+                help="Diámetro del pilote colado in situ. Valores típicos: 0.6 m – 1.2 m"
+            )
+            st.markdown(f'<div style="text-align:center;font-size:1.4rem;font-weight:800;color:#4C8BF5;margin-top:-.5rem">{diametro:.2f} m</div>', unsafe_allow_html=True)
         with c2:
-            longitud = st.number_input("Longitud del pilote (m)", 5.0, 60.0,
-                value=prev.get("longitud_m", 15.0), step=0.5)
+            longitud = st.slider(
+                "Longitud (m)",
+                min_value=5.0, max_value=60.0,
+                value=float(prev.get("longitud_m", 15.0)),
+                step=0.5,
+                help="Longitud de empotramiento del pilote en el suelo"
+            )
+            st.markdown(f'<div style="text-align:center;font-size:1.4rem;font-weight:800;color:#56B8E8;margin-top:-.5rem">{longitud:.1f} m</div>', unsafe_allow_html=True)
         with c3:
-            cantidad = st.number_input("Cantidad de pilotes", 1, 499,
-                value=prev.get("cantidad_pilotes", 20))
+            cantidad = st.number_input(
+                "Cantidad de pilotes",
+                min_value=1, max_value=499,
+                value=int(prev.get("cantidad_pilotes", 20)),
+                step=1,
+                help="Número total de pilotes a construir en esta partida"
+            )
 
         vol_unit = math.pi * (diametro / 2) ** 2 * longitud
         vol_total = vol_unit * cantidad
         st.markdown(f"""
-        <div class="preview-card">
-            <h4>📐 Resumen Geométrico</h4>
-            <div class="preview-row"><span class="preview-label">Volumen unitario</span>
-                <span class="preview-value">{vol_unit:.3f} m³</span></div>
-            <div class="preview-row"><span class="preview-label">Volumen total ({cantidad} pilotes)</span>
-                <span class="preview-value">{vol_total:.1f} m³</span></div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.75rem;margin:1rem 0 0.5rem">
+            <div style="background:rgba(76,139,245,0.08);border:1px solid rgba(76,139,245,0.2);
+                border-radius:12px;padding:1rem;text-align:center">
+                <div style="color:#8892B0;font-size:.72rem;text-transform:uppercase;letter-spacing:.8px;font-weight:600">Sección transversal</div>
+                <div style="color:#E2E8F0;font-size:1.2rem;font-weight:800;margin-top:.3rem">{math.pi*(diametro/2)**2:.3f} m²</div>
+            </div>
+            <div style="background:rgba(86,184,232,0.08);border:1px solid rgba(86,184,232,0.2);
+                border-radius:12px;padding:1rem;text-align:center">
+                <div style="color:#8892B0;font-size:.72rem;text-transform:uppercase;letter-spacing:.8px;font-weight:600">Volumen por pilote</div>
+                <div style="color:#E2E8F0;font-size:1.2rem;font-weight:800;margin-top:.3rem">{vol_unit:.3f} m³</div>
+            </div>
+            <div style="background:rgba(76,139,245,0.08);border:1px solid rgba(76,139,245,0.2);
+                border-radius:12px;padding:1rem;text-align:center">
+                <div style="color:#8892B0;font-size:.72rem;text-transform:uppercase;letter-spacing:.8px;font-weight:600">Volumen total de hormigón</div>
+                <div style="color:#4C8BF5;font-size:1.2rem;font-weight:800;margin-top:.3rem">{vol_total:.1f} m³</div>
+            </div>
         </div>
         """, unsafe_allow_html=True)
 
-    with tab2:
-        st.markdown('<div class="section-title"><h3>🌍 Condiciones del Terreno</h3></div>', unsafe_allow_html=True)
-        col_t1, col_t2 = st.columns([2, 1])
-        with col_t1:
-            suelo_opts = ["suelo_seco", "suelo_agua"]
-            suelo_lbls = {"suelo_seco": "Suelo Seco", "suelo_agua": "Suelo con Agua"}
-            suelo_facts = {"suelo_seco": 1.0, "suelo_agua": 1.35}
-            
-            p_s = prev.get("tipo_suelo", "suelo_seco")
-            if p_s not in suelo_opts: p_s = "suelo_seco"
-            
-            tipo_suelo = st.radio("Tipo de suelo", options=suelo_opts,
-                format_func=lambda x: suelo_lbls[x], index=suelo_opts.index(p_s), horizontal=True)
-            
-            factor = suelo_facts[tipo_suelo]
-            sc = "soil-easy" if factor <= 1.1 else "soil-hard"
-            
-            st.markdown(f'<div style="margin-top:-.5rem;margin-bottom:1rem"><span class="soil-indicator {sc}">{"🟢" if factor<=1.1 else "🔵"} Dificultad: ×{factor}</span></div>', unsafe_allow_html=True)
-        with col_t2:
-            st.markdown("<div style='height:15px'></div>", unsafe_allow_html=True)  # Spacer to align with radio
-            uso_lodo = st.checkbox("Usar lodo bentonítico", value=prev.get("uso_lodo_bentonitico", True))
+    with tab_log:
+        st.markdown("""
+        <div style="margin-bottom: 1.2rem;">
+            <div style="font-weight:700;font-size:1rem;color:#E2E8F0">Condiciones del Terreno y Logística</div>
+            <div style="font-size:.8rem;color:#8892B0">Tipo de suelo, flota de mixers y distancia a la planta concretera</div>
+        </div>
+        """, unsafe_allow_html=True)
 
-        st.markdown('<div class="section-title"><h3>🚛 Logística de Suministro</h3></div>', unsafe_allow_html=True)
-        num_mixers = st.slider("Mixers activos", 1, 10, value=prev.get("num_mixers", 2))
-        
-        c_l1, c_l2, c_l3, c_l4 = st.columns(4)
-        with c_l1:
-            distancia = st.number_input("Distancia a planta (km)", 1.0, 199.0, value=prev.get("distancia_proveedor_km", 30.0), step=1.0)
-        with c_l2:
-            vel_media = st.number_input("V. media de transporte (km/h)", 10.0, 119.0, value=prev.get("velocidad_transporte_kmh_media", 60.0), step=5.0)
-        with c_l3:
-            vel_std = st.number_input("Desv. Est. de velocidad (km/h)", 1.0, 30.0, value=prev.get("velocidad_transporte_kmh_std", 10.0), step=1.0)
-        with c_l4:
-            horas_dia = st.number_input("Jornada (h/día)", 4.0, 24.0, value=prev.get("horas_por_dia", 8.0), step=0.5)
+        col_left, col_right = st.columns([1, 1])
+
+        with col_left:
+            st.markdown('<p style="font-weight:600;font-size:.9rem;color:#E2E8F0;margin-bottom:.5rem">🌍 Tipo de suelo</p>', unsafe_allow_html=True)
+            suelo_opts = ["suelo_seco", "suelo_agua"]
+            suelo_lbls = {"suelo_seco": "🟢 Suelo Seco  ×1.0", "suelo_agua": "🔵 Suelo con Agua  ×1.35"}
+            suelo_facts = {"suelo_seco": 1.0, "suelo_agua": 1.35}
+            suelo_descs = {
+                "suelo_seco": "Suelo estable sin nivel freático. Condiciones normales de perforación.",
+                "suelo_agua": "Presencia de agua subterránea. Requiere lodo bentonítico y mayor tiempo de perforación (+35%)."
+            }
+
+            p_s = prev.get("tipo_suelo", "suelo_seco")
+            if p_s not in suelo_opts:
+                p_s = "suelo_seco"
+
+            tipo_suelo = st.radio(
+                "Tipo de suelo",
+                options=suelo_opts,
+                format_func=lambda x: suelo_lbls[x],
+                index=suelo_opts.index(p_s),
+                label_visibility="collapsed"
+            )
+            factor = suelo_facts[tipo_suelo]
+            st.markdown(f'<p style="font-size:.82rem;color:#8892B0;margin-top:-.3rem">{suelo_descs[tipo_suelo]}</p>', unsafe_allow_html=True)
+
+            uso_lodo = st.checkbox(
+                "Usar lodo bentonítico",
+                value=prev.get("uso_lodo_bentonitico", True),
+                help="Estabiliza las paredes de la excavación en suelos blandos o con agua"
+            )
+
+        with col_right:
+            st.markdown('<p style="font-weight:600;font-size:.9rem;color:#E2E8F0;margin-bottom:.5rem">🚛 Flota de mixers</p>', unsafe_allow_html=True)
+            num_mixers = st.slider(
+                "Mixers activos",
+                min_value=1, max_value=10,
+                value=int(prev.get("num_mixers", 2)),
+                help="Número de camiones mixer disponibles simultáneamente para el suministro de hormigón"
+            )
+
+            distancia = st.slider(
+                "Distancia a planta (km)",
+                min_value=1.0, max_value=150.0,
+                value=float(prev.get("distancia_proveedor_km", 30.0)),
+                step=1.0,
+                help="Distancia en km desde la planta concretera hasta la obra (solo ida)"
+            )
+
+            col_vel1, col_vel2 = st.columns(2)
+            with col_vel1:
+                vel_media = st.number_input(
+                    "V. media (km/h)",
+                    min_value=10.0, max_value=119.0,
+                    value=float(prev.get("velocidad_transporte_kmh_media", 60.0)),
+                    step=5.0,
+                    help="Velocidad promedio del mixer en tránsito"
+                )
+            with col_vel2:
+                vel_std = st.number_input(
+                    "Desv. velocidad (km/h)",
+                    min_value=1.0, max_value=30.0,
+                    value=float(prev.get("velocidad_transporte_kmh_std", 10.0)),
+                    step=1.0,
+                    help="Desviación estándar de la velocidad de transporte (variabilidad del tráfico)"
+                )
+
+            horas_dia = st.number_input(
+                "Jornada laboral (h/día)",
+                min_value=4.0, max_value=24.0,
+                value=float(prev.get("horas_por_dia", 8.0)),
+                step=0.5,
+                help="Horas de trabajo efectivas por día"
+            )
 
         t_transp = (distancia * 2) / vel_media
+        viajes_dia = horas_dia / t_transp if t_transp > 0 else 0
+
+        color_mixers = "#00E68A" if num_mixers >= math.ceil(t_transp) else "#FFD43B"
+        msg_mixers = "✅ Flota suficiente" if num_mixers >= math.ceil(t_transp) else "⚠️ Flota puede ser insuficiente"
+
         st.markdown(f"""
-        <div class="preview-card">
-            <h4>🚛 Logística</h4>
-            <div class="preview-row"><span class="preview-label">Ciclo viaje (ida/vuelta)</span>
-                <span class="preview-value">{t_transp:.2f} h</span></div>
-            <div class="preview-row"><span class="preview-label">Productividad potencial máxima</span>
-                <span class="preview-value">{num_mixers/t_transp:.1f} viajes/h</span></div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:.75rem;margin:1rem 0 0.5rem">
+            <div style="background:rgba(204,30,42,0.08);border:1px solid rgba(204,30,42,0.2);
+                border-radius:12px;padding:1rem;text-align:center">
+                <div style="color:#8892B0;font-size:.72rem;text-transform:uppercase;letter-spacing:.8px;font-weight:600">Ciclo de viaje</div>
+                <div style="color:#E2E8F0;font-size:1.2rem;font-weight:800;margin-top:.3rem">{t_transp:.2f} h</div>
+            </div>
+            <div style="background:rgba(255,212,59,0.08);border:1px solid rgba(255,212,59,0.2);
+                border-radius:12px;padding:1rem;text-align:center">
+                <div style="color:#8892B0;font-size:.72rem;text-transform:uppercase;letter-spacing:.8px;font-weight:600">Viajes/día por mixer</div>
+                <div style="color:#E2E8F0;font-size:1.2rem;font-weight:800;margin-top:.3rem">{viajes_dia:.1f}</div>
+            </div>
+            <div style="background:rgba(76,139,245,0.08);border:1px solid rgba(76,139,245,0.2);
+                border-radius:12px;padding:1rem;text-align:center">
+                <div style="color:#8892B0;font-size:.72rem;text-transform:uppercase;letter-spacing:.8px;font-weight:600">Viajes/día (flota)</div>
+                <div style="color:#E2E8F0;font-size:1.2rem;font-weight:800;margin-top:.3rem">{viajes_dia*num_mixers:.1f}</div>
+            </div>
+            <div style="background:rgba(76,139,245,0.06);border:1px solid rgba(76,139,245,0.15);
+                border-radius:12px;padding:1rem;text-align:center">
+                <div style="color:#8892B0;font-size:.72rem;text-transform:uppercase;letter-spacing:.8px;font-weight:600">Estado flota</div>
+                <div style="color:{color_mixers};font-size:.9rem;font-weight:700;margin-top:.5rem">{msg_mixers}</div>
+            </div>
         </div>
         """, unsafe_allow_html=True)
 
-    with tab3:
-        st.markdown('<div class="section-title"><h3>⏱️ Variables Estocásticas (min)</h3></div>', unsafe_allow_html=True)
-        
-        c9, c10, c11 = st.columns(3)
-        with c9:
-            t_perf_media = st.number_input("μ Perforación", 30, 2880, value=int(prev.get("tiempo_perforacion_min_media", 240)), step=15)
-        with c10:
-            t_perf_std = st.number_input("σ Perforación", 5, 600, value=int(prev.get("tiempo_perforacion_min_std", 48)), step=5)
-        with c11:
+    with tab_estoc:
+        st.markdown("""
+        <div style="margin-bottom: 1.2rem;">
+            <div style="font-weight:700;font-size:1rem;color:#E2E8F0">Variables Estocásticas (Tiempos)</div>
+            <div style="font-size:.8rem;color:#8892B0">Defina la distribución probabilística de los tiempos de perforación y colado (en minutos)</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        col_perf, col_col = st.columns(2)
+
+        with col_perf:
+            st.markdown('<div style="background:rgba(76,139,245,0.06);border:1px solid rgba(76,139,245,0.2);border-radius:14px;padding:1.2rem">', unsafe_allow_html=True)
+            st.markdown('<p style="font-weight:700;font-size:.95rem;color:#4C8BF5;margin:0 0 1rem">🔩 Perforación</p>', unsafe_allow_html=True)
+
+            col_p1, col_p2 = st.columns(2)
+            with col_p1:
+                t_perf_media = st.number_input(
+                    "Media μ (min)",
+                    min_value=30, max_value=2880,
+                    value=int(prev.get("tiempo_perforacion_min_media", 240)),
+                    step=15,
+                    help="Tiempo promedio de perforación por pilote en minutos"
+                )
+            with col_p2:
+                t_perf_std = st.number_input(
+                    "Desv. σ (min)",
+                    min_value=5, max_value=600,
+                    value=int(prev.get("tiempo_perforacion_min_std", 48)),
+                    step=5,
+                    help="Variabilidad del tiempo de perforación (desviación estándar)"
+                )
+
             opts_perf = [e.value for e in TipoDistribucion]
             p_dist_perf = prev.get("dist_perforacion", opts_perf[0])
             if hasattr(p_dist_perf, "value"):
                 p_dist_perf = p_dist_perf.value
             idx_perf = opts_perf.index(p_dist_perf) if p_dist_perf in opts_perf else 0
-            dist_perf = st.selectbox("Dist. Perforación", opts_perf, index=idx_perf, key="dp")
+            dist_perf = st.selectbox("Distribución", opts_perf, index=idx_perf, key="dp", help="Distribución estadística que modela el tiempo de perforación")
 
-        c12, c13, c14 = st.columns(3)
-        with c12:
-            t_colado_media = st.number_input("μ Colado", 15, 1440, value=int(prev.get("tiempo_colado_min_media", 120)), step=15)
-        with c13:
-            t_colado_std = st.number_input("σ Colado", 2, 300, value=int(prev.get("tiempo_colado_min_std", 30)), step=5)
-        with c14:
+            t_perf_aj = t_perf_media * factor
+            color_perf = "#FF6B6B" if factor > 1.1 else "#00E68A"
+            st.markdown(f"""
+            <div style="margin-top:.8rem;padding:.6rem .8rem;background:rgba(0,0,0,0.2);border-radius:8px">
+                <span style="font-size:.8rem;color:#8892B0">Tiempo ajustado por suelo:</span>
+                <span style="font-size:.9rem;font-weight:700;color:{color_perf};margin-left:.4rem">{t_perf_aj:.0f} min ({t_perf_aj/60:.1f}h)</span>
+            </div>
+            """, unsafe_allow_html=True)
+            st.markdown('</div>', unsafe_allow_html=True)
+
+        with col_col:
+            st.markdown('<div style="background:rgba(76,139,245,0.06);border:1px solid rgba(76,139,245,0.2);border-radius:14px;padding:1.2rem">', unsafe_allow_html=True)
+            st.markdown('<p style="font-weight:700;font-size:.95rem;color:#4C8BF5;margin:0 0 1rem">🪣 Colado</p>', unsafe_allow_html=True)
+
+            col_c1, col_c2 = st.columns(2)
+            with col_c1:
+                t_colado_media = st.number_input(
+                    "Media μ (min)",
+                    min_value=15, max_value=1440,
+                    value=int(prev.get("tiempo_colado_min_media", 120)),
+                    step=15,
+                    help="Tiempo promedio de colado de hormigón por pilote en minutos"
+                )
+            with col_c2:
+                t_colado_std = st.number_input(
+                    "Desv. σ (min)",
+                    min_value=2, max_value=300,
+                    value=int(prev.get("tiempo_colado_min_std", 30)),
+                    step=5,
+                    help="Variabilidad del tiempo de colado"
+                )
+
             opts_col = [e.value for e in TipoDistribucion]
             p_dist_col = prev.get("dist_colado", opts_col[1])
             if hasattr(p_dist_col, "value"):
                 p_dist_col = p_dist_col.value
             idx_col = opts_col.index(p_dist_col) if p_dist_col in opts_col else 1
-            dist_colado = st.selectbox("Dist. Colado", opts_col, index=idx_col, key="dc")
+            dist_colado = st.selectbox("Distribución", opts_col, index=idx_col, key="dc", help="Distribución estadística que modela el tiempo de colado")
 
-        t_perf_aj = t_perf_media * factor
-        st.markdown(f"""
-        <div class="preview-card" style="margin-top:2rem">
-            <h4>📊 Resumen Probabilístico</h4>
-            <div class="preview-row"><span class="preview-label">Perf. (T. Base)</span>
-                <span class="preview-value">{dist_perf} (μ={t_perf_media}m, σ={t_perf_std}m)</span></div>
-            <div class="preview-row"><span class="preview-label">Perf. (Ajustado ×{factor})</span>
-                <span class="preview-value" style="color:{'#FF6B6B' if factor>1.1 else '#00E68A'}">{t_perf_aj:.0f}m ({t_perf_aj/60:.1f}h)</span></div>
-            <div class="preview-row"><span class="preview-label">Colado</span>
-                <span class="preview-value">{dist_colado} (μ={t_colado_media}m, σ={t_colado_std}m)</span></div>
+            ciclo_est = (t_perf_aj + t_colado_media) / 60
+            st.markdown(f"""
+            <div style="margin-top:.8rem;padding:.6rem .8rem;background:rgba(0,0,0,0.2);border-radius:8px">
+                <span style="font-size:.8rem;color:#8892B0">Ciclo estimado por pilote:</span>
+                <span style="font-size:.9rem;font-weight:700;color:#56B8E8;margin-left:.4rem">{ciclo_est:.1f}h</span>
+            </div>
+            """, unsafe_allow_html=True)
+            st.markdown('</div>', unsafe_allow_html=True)
+
+    with tab_save:
+        st.markdown("""
+        <div style="margin-bottom: 1.2rem;">
+            <div style="font-weight:700;font-size:1rem;color:#E2E8F0">Identificación y Guardado</div>
+            <div style="font-size:.8rem;color:#8892B0">Asigne un nombre a este escenario para guardarlo y poder compararlo después</div>
         </div>
         """, unsafe_allow_html=True)
 
-    with tab4:
-        st.markdown('<div class="section-title"><h3>🏷️ Identificación y Guardado</h3></div>', unsafe_allow_html=True)
-        nombre_esc = st.text_input("Nombre de la configuración", value=prev.get("nombre_escenario", "Escenario Base"))
-        notas = st.text_area("Observaciones", value=prev.get("notas", ""), height=80)
+        col_s1, col_s2 = st.columns([2, 1])
+        with col_s1:
+            nombre_esc = st.text_input(
+                "Nombre del escenario",
+                value=prev.get("nombre_escenario", "Escenario Base"),
+                placeholder="Ej: Suelo seco — 3 mixers — 20 pilotes",
+                help="Nombre único para identificar esta configuración. Se guardará en data/scenarios/"
+            )
+        with col_s2:
+            notas = st.text_area("Notas (opcional)", value=prev.get("notas", ""), height=68, placeholder="Observaciones adicionales...")
 
         st.markdown("<br>", unsafe_allow_html=True)
         submitted = st.form_submit_button("💾 Validar y Guardar Escenario", use_container_width=True, type="primary")
@@ -246,31 +414,29 @@ if submitted:
         st.session_state["datos_formulario"] = params.model_dump(mode="json")
 
         nombre_archivo = f"{nombre_esc.replace(' ', '_')}.json"
-        
-        data_to_save = {
-            "parametros": params.model_dump(mode="json")
-        }
+        data_to_save = {"parametros": params.model_dump(mode="json")}
         if "resultado" in st.session_state:
             data_to_save["resultado"] = dataclasses.asdict(st.session_state["resultado"])
-            
+
         with open(os.path.join(scenarios_dir, nombre_archivo), "w", encoding="utf-8") as f:
             json.dump(data_to_save, f, indent=2, ensure_ascii=False)
 
         st.markdown(f"""
         <div class="alerta-success" style="margin-bottom:1.5rem">
-            ✅ Escenario validado y asegurado: <strong>{nombre_esc}</strong>.
+            ✅ Escenario <strong>{nombre_esc}</strong> validado y guardado correctamente.
+            Puede proceder a la simulación en el Módulo 2.
         </div>
         """, unsafe_allow_html=True)
 
         st.markdown(f"""
         <div class="kpi-grid">
             <div class="kpi-card kpi-accent-cyan">
-                <div class="kpi-label">Volumen (m³)</div>
+                <div class="kpi-label">Volumen total (m³)</div>
                 <div class="kpi-value">{params.volumen_total_m3:.1f}</div>
             </div>
             <div class="kpi-card kpi-accent-purple">
-                <div class="kpi-label">T. Transporte</div>
-                <div class="kpi-value">{params.tiempo_transporte_h:.1f}h</div>
+                <div class="kpi-label">T. Transporte (h)</div>
+                <div class="kpi-value">{params.tiempo_transporte_h:.1f}</div>
             </div>
             <div class="kpi-card kpi-accent-green">
                 <div class="kpi-label">Días Teóricos</div>

@@ -14,20 +14,20 @@ from core.analytics.kpis import resumen_estadistico, tabla_eventos_df, distribuc
 from core.analytics.gantt import generar_gantt_df, generar_curva_s
 from core.analytics.exportar import exportar_excel, _formatear_tiempo
 
-# ── Design tokens ──────────────────────────────────────────────
-TX  = "#E2E8F0"
-TX2 = "#8892B0"
-GRD = "rgba(255,255,255,0.04)"
-ACC = "#00E68A"
-BLU = "#4D7CFE"
-YEL = "#FFD43B"
-RED = "#FF6B6B"
-PUR = "#A855F7"
-CYN = "#22D3EE"
-CARD = "#161625"
+# ── Design tokens (EMCA brand palette — match main.py)
+TX  = "#E8EDF5"
+TX2 = "#8A98B8"
+GRD = "rgba(76,139,245,0.06)"
+ACC = "#4C8BF5"
+BLU = "#4C8BF5"
+YEL = "#F5A623"
+RED = "#CC1E2A"
+PUR = "#7C6FD4"
+CYN = "#56B8E8"
+CARD = "#111E38"
 
 def _layout(fig, h=400, **kw):
-    """Apply consistent premium dark layout to any Plotly figure."""
+    """Apply consistent EMCA brand layout to any Plotly figure."""
     fig.update_layout(
         plot_bgcolor="rgba(0,0,0,0)",
         paper_bgcolor="rgba(0,0,0,0)",
@@ -44,7 +44,7 @@ def _layout(fig, h=400, **kw):
 st.markdown("""
 <div style="margin-bottom:.5rem">
     <h1 style="margin:0;font-size:1.8rem;font-weight:800">📊 Panel de Control Gerencial</h1>
-    <p style="color:#8892B0;margin:.2rem 0 0;font-size:.92rem">
+    <p style="color:#8A98B8;margin:.2rem 0 0;font-size:.92rem">
         Visión analítica del desempeño del sistema logístico y de construcción
     </p>
 </div>
@@ -70,6 +70,29 @@ kpis = resultado.kpis
 if kpis is None:
     st.error("No hay KPIs disponibles. Vuelva a ejecutar la simulación.")
     st.stop()
+
+# ══════════════════════════════════════════════════════════════
+# EXPORT BUTTON
+# ══════════════════════════════════════════════════════════════
+col_title, col_export = st.columns([4, 1])
+with col_export:
+    try:
+        # exportar_excel expects (resultado, directorio), returns file path
+        ruta_excel = exportar_excel(resultado)
+        with open(ruta_excel, "rb") as f:
+            excel_bytes = f.read()
+            
+        nombre_esc = params.nombre_escenario if params else "reporte"
+        st.download_button(
+            label="📥 Exportar Excel",
+            data=excel_bytes,
+            file_name=f"EMCA_{nombre_esc.replace(' ', '_')}.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            use_container_width=True,
+            type="primary",
+        )
+    except Exception as e:
+        st.caption(f"Export no disponible: {e}")
 
 # ══════════════════════════════════════════════════════════════
 # KPI CARDS

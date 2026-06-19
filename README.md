@@ -55,58 +55,55 @@ graph TD
 
 ## 🧭 Recorrido por los Módulos de la Aplicación
 
-El sistema está estructurado en un flujo de **4 Módulos Interactivos** coordinados mediante un Stepper dinámico y un sidebar elegante:
+El sistema está estructurado en un flujo de **5 Módulos Interactivos** coordinados mediante un Stepper dinámico y un sidebar elegante con **branding corporativo EMCA**:
 
 ### 🏠 Inicio — Control Tower
 *   Una cordial bienvenida con un resumen ejecutivo de las fases del sistema.
-*   **Stepper Inteligente**: Muestra visualmente tu progreso (Parametrización ➔ Simulación ➔ Dashboard) según la presencia de datos activos en la sesión.
+*   **Stepper Inteligente**: Muestra visualmente tu progreso.
+*   **Banner Global**: Indicador persistente en el menú lateral que informa cuál es el escenario activo y su estado de simulación.
 
 ### ⚙️ Módulo 1 — Parametrización Estocástica
-Permite configurar el escenario de simulación en cuatro pestañas dedicadas:
-1.  **📐 Dimensiones**: Diámetro del pilote, longitud (profundidad) y la cantidad de pilotes a construir.
-2.  **⛰️ Geología y Entorno**: Tipo de suelo (seco, con presencia de agua, arcillas, rocas) que aplica automáticamente factores multiplicadores de dificultad física a los tiempos de perforación, además de la opción de lodo bentonítico.
-3.  **🚚 Logística**: Número de camiones mixers asignados, distancia del proveedor de concreto, velocidad media y desviación estándar del transporte.
-4.  **⏱️ Variables Estocásticas**:
-    *   **Perforación**: Permite definir la media ($\mu$), desviación estándar ($\sigma$) y su distribución de probabilidad.
-    *   **Colado**: Permite configurar de forma independiente la media, la **desviación estándar ($\sigma$ Colado)** y su correspondiente tipo de distribución.
-5.  **💾 Guardar Escenario**: Guarda todas las variables en un archivo físico `.json` dentro del servidor para su posterior análisis.
+Permite configurar el escenario de simulación en **pestañas organizadas (tabs)** para una experiencia de usuario limpia:
+1.  **📐 Geometría**: Diámetro del pilote, longitud (profundidad) y la cantidad de pilotes a construir.
+2.  **🚚 Logística**: Número de camiones mixers asignados, distancia del proveedor, velocidad media.
+3.  **⏱️ Variables Estocásticas**:
+    *   **Perforación y Colado**: Permite definir de forma independiente la media ($\mu$), desviación estándar ($\sigma$) y su distribución de probabilidad (Normal, Lognormal, Triangular, Exponencial).
+    *   **Geología**: Tipo de suelo (aplica automáticamente factores multiplicadores de dificultad física a los tiempos).
+4.  **💾 Guardar Escenario**: Guarda todas las variables en un archivo físico `.json` dentro del servidor para su posterior análisis.
 
 ### 🚀 Módulo 2 — Simulación Monte Carlo
-*   **Ajuste del tamaño de muestra**: Permite elegir la cantidad de réplicas independientes (10 a 500).
-*   **Barra de Progreso y Logs en Tiempo Real**: Muestra el progreso de la simulación mediante una barra interactiva y una consola que reporta eventos críticos a nivel operativo.
-*   **Validaciones Físicas Pydantic**: El motor valida la congruencia matemática (por ejemplo, previniendo desviaciones estándar mayores que la media) antes de inicializar el cálculo de SimPy.
+*   **Ajuste del tamaño de muestra**: Permite elegir la cantidad de réplicas independientes (100 a 2000).
+*   **Barra de Progreso y Auto-Guardado**: Feedback visual en tiempo real durante la generación de miles de réplicas, seguido del almacenamiento automático de los resultados asociados al escenario activo.
+*   **Validaciones Físicas Pydantic**: El motor valida la congruencia matemática antes de inicializar el cálculo de SimPy.
 
 ### 📊 Módulo 3 — Dashboard Gerencial & Recomendaciones
 Aquí se despliega toda la analítica avanzada del proyecto:
-
-1.  **💡 Sugerencias de Optimización (IA Analítica)**:
-    Un motor experto que evalúa automáticamente tus resultados y redacta recomendaciones específicas de acción:
-    *   *Saturación Logística*: Si la utilización de mixers es superior al 85%, te sugiere incorporar mixers para no estrangular el ritmo de la perforadora.
-    *   *Oportunidad de Ahorro*: Si la utilización de mixers es inferior al 45%, te sugiere reducir la flota de camiones contratados para ahorrar costos.
-    *   *Sincronización*: Alertas de tiempos muertos excesivos de los mixers en obra.
-    *   *Identificación de Restricciones*: Señala si el cuello de botella físico reside en el transporte o en la capacidad de la perforadora.
-    *   *Volatilidad*: Te avisa si hay una brecha mayor al 15% entre el escenario esperado (P50) y el pesimista (P90).
-2.  **📊 Distribución de Probabilidad Monte Carlo**: Histograma interactivo con las duraciones del proyecto, líneas guía para los percentiles P10, P50 y P90, y un área sombreada del intervalo de confianza.
-3.  **📅 Cronograma Gantt de la Réplica Base**: Línea de tiempo interactiva donde puedes seleccionar la fecha real de inicio y ver fase por fase la construcción de cada pilote.
+1.  **💡 Sugerencias de Optimización (IA Analítica)**: Un motor experto que evalúa automáticamente tus resultados y redacta recomendaciones específicas de acción (saturación de flota, oportunidades de ahorro, identificación del cuello de botella).
+2.  **📊 Distribución de Probabilidad Monte Carlo**: Histograma interactivo con las duraciones del proyecto y percentiles P10, P50 y P90.
+3.  **📅 Cronograma Gantt de la Réplica Base**: Línea de tiempo interactiva pilote por pilote.
 4.  **📈 Curva S (Avance Acumulado)**: Curva interactiva de avance del proyecto que muestra los tramos de alta productividad vs. las mesetas de inactividad.
-5.  **🎯 Radar de Eficiencia**: Perfil de cinco ejes (Perforación, Colado, Logística, Mixer, Predictibilidad) que mide la armonía del balance de tu sistema.
-6.  **🌪️ Diagrama de Tornado (Sensibilidad)**: Identifica cuál de los parámetros de entrada tiene mayor poder de influencia sobre el tiempo total del proyecto.
-7.  **🗂️ Detalle por Pilote**: Tabla interactiva con gradientes térmicos en la columna de esperas (de verde a rojo) y filtros por tiempos de espera o ciclo total.
-8.  **⚖️ Comparador de Escenarios**: Compara simultáneamente los parámetros de entrada de dos escenarios distintos grabados en el disco.
-9.  **📥 Exportador de Reportes Excel Profesional**: Botón para descargar de forma inmediata la base de datos a Excel.
+5.  **🎯 Radar de Eficiencia**: Perfil de cinco ejes (Velocidad, Confiabilidad, Eficiencia Mixer, Tiempos de Espera) que mide la armonía del balance de tu sistema.
+6.  **📥 Exportador de Reportes Excel Profesional**: Botón para descargar de forma inmediata los KPIs y la bitácora simulada a Excel.
+
+### 🔍 Módulo 4 — Comparación de Escenarios
+Diseñado para la toma de decisiones basada en datos:
+*   Selección múltiple de hasta 3 escenarios previamente guardados.
+*   Comparación tabular de las variables de entrada.
+*   Contraste de KPIs gerenciales (P50, P90, cuellos de botella) mediante tarjetas.
+*   Análisis cruzado a través de gráficos de barras y radares de eficiencia lado a lado.
 
 ---
 
-## 📈 Reportes en Excel de Alta Legibilidad (Novedad)
-El sistema genera archivos de cálculo Excel (`.xlsx`) optimizados con un diseño corporativo en color azul EMCA, bordes limpios y fuentes Inter, estructurados en tres hojas de cálculo:
+## 📈 Reportes en Excel de Alta Legibilidad
+El sistema genera archivos de cálculo Excel (`.xlsx`) optimizados con diseño corporativo (colores de EMCA), estructurados en tres hojas de cálculo:
 1.  **📊 KPIs Gerenciales**: Resumen ejecutivo del escenario.
 2.  **📋 Detalle Pilotes**: Bitácora completa de la réplica base pilote por pilote.
 3.  **📈 Distribución Tiempos**: Los datos brutos ordenados de todas las corridas Monte Carlo.
 
 ### ⏱️ Formato de Tiempos Amigable e Intuitivo
-Para evitar confusiones a los tomadores de decisiones que no están acostumbrados a leer tiempos en formato puramente decimal (como `4.80` horas), el exportador de Excel incorpora el formateador inteligente `_formatear_tiempo` que convierte los números en textos explícitos de **horas y minutos**:
+Para evitar confusiones a los tomadores de decisiones, el exportador de Excel incorpora un formateador inteligente que convierte los números decimales en textos explícitos de **horas y minutos**:
 *   *Métricas de más de una hora:* `4.80 h` se exporta como **`4.80 h (4h 48min)`**.
-*   *Métricas de menos de una hora:* `0.75 h` se exporta automáticamente como **`0.75 h (45 min)`** para una lectura rápida.
+*   *Métricas de menos de una hora:* `0.75 h` se exporta como **`0.75 h (45 min)`**.
 *   *Tiempos de espera nulos:* Un valor de `0.00` se exporta limpiamente como **`0 min`**.
 
 ---

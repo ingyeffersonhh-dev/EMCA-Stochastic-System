@@ -127,14 +127,15 @@ ejecutar = st.button("🚀 Iniciar Simulación Estocástica", use_container_widt
 
 if ejecutar:
     stages_container = st.empty()
-    
+    progress_bar = st.progress(0, text="Iniciando simulación...")
+
     stages = [
         ("🔢", "Generando variables aleatorias...", False),
         ("⚙️", "Ejecutando motor SimPy...", False),
         ("📊", "Calculando KPIs y estadísticas...", False),
         ("✅", "Simulación completada", False),
     ]
-    
+
     def render_stages(stages):
         html = ""
         first_incomplete = next((i for i, (_, _, d) in enumerate(stages) if not d), len(stages))
@@ -147,30 +148,36 @@ if ejecutar:
                 cls = ""
             html += f'<div class="progress-stage {cls}"><span class="progress-icon">{icon}</span><span class="progress-label">{label}</span></div>'
         stages_container.markdown(html, unsafe_allow_html=True)
-    
+
     render_stages(stages)
+    progress_bar.progress(5, text="Preparando modelo...")
     time.sleep(0.3)
-    
+
     with st.spinner(""):
         t0 = time.time()
-        
+
         stages[0] = ("🔢", "Generando variables aleatorias...", True)
         render_stages(stages)
+        progress_bar.progress(20, text="Generando distribuciones estocásticas...")
         time.sleep(0.1)
-        
+
         stages[1] = ("⚙️", "Ejecutando motor SimPy...", True)
         render_stages(stages)
-        
+        progress_bar.progress(45, text=f"Ejecutando {n_replicas} réplicas Monte Carlo...")
+
         resultado = ejecutar_simulacion(params, n_replicas=n_replicas, seed=int(seed))
-        
+
         elapsed = time.time() - t0
-        
+        progress_bar.progress(80, text="Calculando KPIs y percentiles...")
+
         stages[2] = ("📊", "Calculando KPIs y estadísticas...", True)
         render_stages(stages)
         time.sleep(0.1)
-        
+
+        progress_bar.progress(100, text=f"✅ Completado en {elapsed:.1f}s")
         stages[3] = ("✅", f"Simulación completada en {elapsed:.1f}s", True)
         render_stages(stages)
+
 
     st.session_state["resultado"] = resultado
 
