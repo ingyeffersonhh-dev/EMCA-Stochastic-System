@@ -5,10 +5,9 @@ Cálculo de indicadores clave de rendimiento y detección de alertas operativas.
 from __future__ import annotations
 
 from typing import List, Dict, Any
-import numpy as np
 import pandas as pd
 
-from core.models.resultados import EventoPilote, KPIs, ResultadoSimulacion
+from core.models.resultados import EventoPilote, ResultadoSimulacion
 
 
 def resumen_estadistico(resultado: ResultadoSimulacion) -> Dict[str, Any]:

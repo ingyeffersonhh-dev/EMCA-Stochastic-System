@@ -6,57 +6,44 @@ import streamlit as st
 import plotly.express as px
 import plotly.graph_objects as go
 import numpy as np
-import pandas as pd
 import json
 import os
 
-from core.analytics.kpis import resumen_estadistico, tabla_eventos_df, distribucion_tiempos_df
+from core.analytics.kpis import tabla_eventos_df
 from core.analytics.gantt import generar_gantt_df, generar_curva_s
 from core.analytics.exportar import exportar_excel, _formatear_tiempo
+from app.components.theme import get_active_tokens, _rgba
+from app.components.stepper import render_stepper
 
-# ── Design tokens (EMCA brand palette — match main.py)
-TX  = "#E8EDF5"
-TX2 = "#8A98B8"
-GRD = "rgba(76,139,245,0.06)"
-ACC = "#4C8BF5"
-BLU = "#4C8BF5"
-YEL = "#F5A623"
-RED = "#CC1E2A"
-PUR = "#7C6FD4"
-CYN = "#56B8E8"
-CARD = "#111E38"
+t = get_active_tokens()
 
 def _layout(fig, h=400, **kw):
-    """Apply consistent EMCA brand layout to any Plotly figure."""
+    """Apply consistent EMCA brand layout to any Plotly figure (mode-aware)."""
+    t = get_active_tokens()
     fig.update_layout(
         plot_bgcolor="rgba(0,0,0,0)",
         paper_bgcolor="rgba(0,0,0,0)",
         height=h,
         margin=dict(t=30, b=50, l=60, r=30),
-        font=dict(family="Inter,sans-serif", color=TX, size=12),
-        legend=dict(font=dict(color=TX2)),
+        font=dict(family="Inter,sans-serif", color=t.TX, size=12),
+        legend=dict(font=dict(color=t.TX2)),
         **kw,
     )
-    fig.update_xaxes(showgrid=True, gridcolor=GRD, gridwidth=1, zeroline=False)
-    fig.update_yaxes(showgrid=True, gridcolor=GRD, gridwidth=1, zeroline=False)
+    fig.update_xaxes(showgrid=True, gridcolor=t.GRD, gridwidth=1, zeroline=False)
+    fig.update_yaxes(showgrid=True, gridcolor=t.GRD, gridwidth=1, zeroline=False)
 
 # ── Title ──────────────────────────────────────────────────────
-st.markdown("""
+st.markdown(f"""
 <div style="margin-bottom:.5rem">
     <h1 style="margin:0;font-size:1.8rem;font-weight:800">📊 Panel de Control Gerencial</h1>
-    <p style="color:#8A98B8;margin:.2rem 0 0;font-size:.92rem">
+    <p style="color:{t.TX2};margin:.2rem 0 0;font-size:.92rem">
         Visión analítica del desempeño del sistema logístico y de construcción
     </p>
 </div>
 """, unsafe_allow_html=True)
 
 # ── Stepper ────────────────────────────────────────────────────
-html = '<div class="stepper">'
-for i, (n, l) in enumerate([("1","Parametrización"),("2","Simulación"),("3","Dashboard")]):
-    html += f'<div class="stepper-step completed"><span>✅</span><span>{l}</span></div>'
-    if i < 2: html += '<span class="stepper-arrow">→</span>'
-html += '</div>'
-st.markdown(html, unsafe_allow_html=True)
+render_stepper([("1", "Parametrización"), ("2", "Simulación"), ("3", "Dashboard")])
 
 # ── Pre-condition ──────────────────────────────────────────────
 if "resultado" not in st.session_state:
@@ -144,34 +131,28 @@ sugerencias = []
 
 # Logística y Mixers
 if kpis.utilizacion_mixer_pct > 85:
-    sugerencias.append(("⚠️", "Alta Saturación Logística", f"Los mixers tienen una utilización del {kpis.utilizacion_mixer_pct:.0f}%. Considere agregar 1 o 2 unidades a la flota para aliviar la saturación y proteger el avance.", RED))
+    sugerencias.append(("⚠️", "Alta Saturación Logística", f"Los mixers tienen una utilización del {kpis.utilizacion_mixer_pct:.0f}%. Considere agregar 1 o 2 unidades a la flota para aliviar la saturación y proteger el avance.", t.RED))
 elif kpis.utilizacion_mixer_pct < 45:
-    sugerencias.append(("🔄", "Flota Subutilizada", f"La utilización de la flota es baja ({kpis.utilizacion_mixer_pct:.0f}%). Considere redistribuir los mixers o ajustar los turnos para equilibrar la carga operativa sin afectar el cronograma.", ACC))
+    sugerencias.append(("🔄", "Flota Subutilizada", f"La utilización de la flota es baja ({kpis.utilizacion_mixer_pct:.0f}%). Considere redistribuir los mixers o ajustar los turnos para equilibrar la carga operativa sin afectar el cronograma.", t.ACC))
 
 if kpis.tiempo_espera_mixer_promedio_h > 1.5:
-    sugerencias.append(("🚚", "Sincronización de Despachos", f"El tiempo promedio de espera del mixer en obra es alto ({_formatear_tiempo(kpis.tiempo_espera_mixer_promedio_h)}). Mejorar la coordinación con la planta concretera para despachar justo al finalizar la perforación reducirá los tiempos muertos y acelerará el ciclo total.", YEL))
-
-# Cuellos de botella
-if kpis.cuello_botella == "Transporte":
-    sugerencias.append(("⏱️", "Cuello de Botella en Suministro", "El ciclo de transporte (ida y vuelta) está dictando el ritmo de la obra. Explorar plantas concreteras más cercanas o aumentar la velocidad promedio mediante nuevas rutas reducirá drásticamente el tiempo total.", YEL))
-elif kpis.cuello_botella == "Perforación":
-    sugerencias.append(("🚜", "Cuello de Botella en Perforación", "La perforadora es la principal restricción del proyecto. Para acelerar el cronograma, evalúe incorporar un equipo de perforación secundario o extender la jornada laboral exclusivamente para esta fase.", RED))
+    sugerencias.append(("🚚", "Sincronización de Despachos", f"El tiempo promedio de espera del mixer en obra es alto ({_formatear_tiempo(kpis.tiempo_espera_mixer_promedio_h)}). Mejorar la coordinación con la planta concretera para despachar justo al finalizar la perforación reducirá los tiempos muertos y acelerará el ciclo total.", t.YELLOW))
 
 # Riesgo / Incertidumbre
 incertidumbre = (kpis.tiempo_proyecto_p90_h - kpis.tiempo_proyecto_p50_h) / kpis.tiempo_proyecto_p50_h
 if incertidumbre > 0.15:
-    sugerencias.append(("📈", "Alta Volatilidad de Tiempos", f"Existe gran diferencia entre su escenario esperado (P50) y el pesimista (P90) ({incertidumbre:.0%} de desvío). Se recomienda asegurar contratos blindados para imprevistos climáticos o mecánicos.", RED))
+    sugerencias.append(("📈", "Alta Volatilidad de Tiempos", f"Existe gran diferencia entre su escenario esperado (P50) y el pesimista (P90) ({incertidumbre:.0%} de desvío). Se recomienda asegurar contratos blindados para imprevistos climáticos o mecánicos.", t.RED))
 elif incertidumbre < 0.05:
-    sugerencias.append(("🎯", "Alta Predictibilidad", "El sistema tiene una baja variabilidad. El cronograma actual es robusto, lo que facilita fijar compromisos agresivos con el cliente final.", ACC))
+    sugerencias.append(("🎯", "Alta Predictibilidad", "El sistema tiene una baja variabilidad. El cronograma actual es robusto, lo que facilita fijar compromisos agresivos con el cliente final.", t.ACC))
 
 html_sug = '<div style="display:flex; flex-direction:column; gap:1rem;">'
 for icon, title, text, color in sugerencias:
     html_sug += f'''
-<div class="kpi-card" style="display:flex; align-items:center; gap:1.2rem; padding:1.2rem; background:rgba(22,22,37,0.7); border-left:4px solid {color}; text-align:left;">
+<div class="kpi-card" style="display:flex; align-items:center; gap:1.2rem; padding:1.2rem; background:{_rgba(t.CARD, 0.7)}; border-left:4px solid {color}; text-align:left;">
     <div style="font-size:2rem;">{icon}</div>
     <div>
-        <h4 style="margin:0; font-size:1.1rem; font-weight:600; color:{TX};">{title}</h4>
-        <p style="margin:0.3rem 0 0; font-size:0.95rem; color:{TX2}; line-height:1.4;">{text}</p>
+        <h4 style="margin:0; font-size:1.1rem; font-weight:600; color:{t.TX};">{title}</h4>
+        <p style="margin:0.3rem 0 0; font-size:0.95rem; color:{t.TX2}; line-height:1.4;">{text}</p>
     </div>
 </div>
 '''
@@ -194,20 +175,20 @@ if tiempos:
     fig_hist = go.Figure()
     fig_hist.add_trace(go.Histogram(
         x=arr, nbinsx=40,
-        marker=dict(color=BLU, line=dict(width=0)),
+        marker=dict(color=t.BLUE, line=dict(width=0)),
         opacity=0.85, name="Duración",
     ))
 
     # Percentile lines
     for val, color, label, yp in [
-        (kpis.tiempo_proyecto_p10_h, ACC, "P10", 0.92),
-        (kpis.tiempo_proyecto_p50_h, YEL, "P50", 0.82),
-        (kpis.tiempo_proyecto_p90_h, RED, "P90", 0.72),
+        (kpis.tiempo_proyecto_p10_h, t.ACC, "P10", 0.92),
+        (kpis.tiempo_proyecto_p50_h, t.YELLOW, "P50", 0.82),
+        (kpis.tiempo_proyecto_p90_h, t.RED, "P90", 0.72),
     ]:
         fig_hist.add_vline(x=val, line_dash="dash", line_color=color, line_width=2)
         fig_hist.add_annotation(
             x=val, y=yp, text=f"<b>{label}</b><br>{_formatear_tiempo(val)}",
-            font=dict(color=color, size=11), bgcolor="rgba(22,22,37,0.9)",
+            font=dict(color=color, size=11), bgcolor=_rgba(t.CARD, 0.9),
             bordercolor=color, borderwidth=1, borderpad=4,
             showarrow=False, yref="paper",
         )
@@ -215,7 +196,7 @@ if tiempos:
     # P10-P90 band
     fig_hist.add_vrect(
         x0=kpis.tiempo_proyecto_p10_h, x1=kpis.tiempo_proyecto_p90_h,
-        fillcolor="rgba(77,124,254,0.06)", layer="below", line_width=0,
+        fillcolor=_rgba(t.BLUE, 0.06), layer="below", line_width=0,
     )
 
     _layout(fig_hist, h=420, showlegend=False,
@@ -250,9 +231,9 @@ gantt_df = generar_gantt_df(resultado.eventos_replica_base, hora_inicio_proyecto
 
 if not gantt_df.empty:
     COLOR_MAP = {
-        "🔩 Perforación": BLU,
-        "⏳ Espera Mixer": RED,
-        "🪣 Colado": ACC,
+        "🔩 Perforación": t.BLUE,
+        "⏳ Espera Mixer": t.RED,
+        "🪣 Colado": t.ACC,
     }
     fig_g = px.timeline(gantt_df, x_start="Inicio", x_end="Fin", y="Pilote",
                          color="Fase", color_discrete_map=COLOR_MAP,
@@ -276,13 +257,13 @@ if not curva_df.empty:
     fig_s.add_trace(go.Scatter(
         x=curva_df["tiempo_h"], y=curva_df["avance_pct"],
         mode="lines", fill="tozeroy",
-        line=dict(color=CYN, width=3),
-        fillcolor="rgba(34,211,238,0.08)",
+        line=dict(color=t.CYAN, width=3),
+        fillcolor=_rgba(t.CYAN, 0.08),
     ))
     _layout(fig_s, h=300, showlegend=False,
             xaxis_title="Tiempo (h)",
             yaxis_title="Pilotes completados (%)",
-            yaxis=dict(range=[0, 105], showgrid=True, gridcolor=GRD))
+            yaxis=dict(range=[0, 105], showgrid=True, gridcolor=t.GRD))
     st.plotly_chart(fig_s, use_container_width=True)
 
 st.divider()
@@ -310,36 +291,36 @@ with col_r:
     fig_radar.add_trace(go.Scatterpolar(
         r=vals,
         theta=["Perforación", "Colado", "Logística", "Mixer", "Predictibilidad"],
-        fill="toself", fillcolor="rgba(0,230,138,0.1)",
-        line=dict(color=ACC, width=2),
-        marker=dict(size=6, color=ACC),
+        fill="toself", fillcolor=_rgba(t.GREEN, 0.1),
+        line=dict(color=t.ACC, width=2),
+        marker=dict(size=6, color=t.ACC),
     ))
     fig_radar.update_layout(
         polar=dict(
-            radialaxis=dict(visible=True, range=[0, 100], gridcolor=GRD,
-                            tickfont=dict(size=10, color=TX2)),
-            angularaxis=dict(gridcolor=GRD, tickfont=dict(color=TX2)),
+            radialaxis=dict(visible=True, range=[0, 100], gridcolor=t.GRD,
+                            tickfont=dict(size=10, color=t.TX2)),
+            angularaxis=dict(gridcolor=t.GRD, tickfont=dict(color=t.TX2)),
             bgcolor="rgba(0,0,0,0)",
         ),
         height=340, showlegend=False, margin=dict(t=30, b=30),
-        paper_bgcolor="rgba(0,0,0,0)", font=dict(color=TX),
+        paper_bgcolor="rgba(0,0,0,0)", font=dict(color=t.TX),
     )
     st.plotly_chart(fig_radar, use_container_width=True)
 
 with col_t:
     st.markdown('<div class="section-title"><h3>🌪️ Sensibilidad</h3><span class="badge">Tornado</span></div>', unsafe_allow_html=True)
     ps = {"Perforación": 0.35, "Colado": 0.25, "Mixers": 0.20, "Distancia": 0.12, "Suelo": 0.08}
-    colors = [RED, "#FF8C42", YEL, BLU, ACC]
+    colors = [t.RED, t.YELLOW, t.ACC, t.BLUE, t.GREEN]
     fig_t = go.Figure()
     fig_t.add_trace(go.Bar(
         y=list(ps.keys()), x=list(ps.values()), orientation='h',
         marker=dict(color=colors, line=dict(width=0)),
         text=[f"{v:.0%}" for v in ps.values()], textposition='outside',
-        textfont=dict(color=TX, size=12, family="Inter"),
+        textfont=dict(color=t.TX, size=12, family="Inter"),
     ))
     _layout(fig_t, h=340, showlegend=False,
-            yaxis=dict(autorange="reversed", gridcolor=GRD),
-            xaxis=dict(range=[0, 0.5], gridcolor=GRD))
+            yaxis=dict(autorange="reversed", gridcolor=t.GRD),
+            xaxis=dict(range=[0, 0.5], gridcolor=t.GRD))
     fig_t.update_layout(margin=dict(l=100))
     st.plotly_chart(fig_t, use_container_width=True)
 
@@ -349,8 +330,8 @@ st.divider()
 # DETAIL TABLE
 # ══════════════════════════════════════════════════════════════
 st.markdown('<div class="section-title"><h3>🗂️ Detalle por Pilote</h3><span class="badge">Réplica Base</span></div>', unsafe_allow_html=True)
-st.markdown('''
-<div style="display:flex; gap: 1rem; margin-bottom: 1rem; font-size: 0.9rem; background:rgba(255,255,255,0.05); padding: 0.5rem 1rem; border-radius: 0.5rem; justify-content: center;">
+st.markdown(f'''
+<div style="display:flex; gap: 1rem; margin-bottom: 1rem; font-size: 0.9rem; background:{t.GRD}; padding: 0.5rem 1rem; border-radius: 0.5rem; justify-content: center;">
   <div>🟩 <b>Óptimo</b> (0h - 2h)</div>
   <div>🟨 <b>Moderado</b> (2h - 5h)</div>
   <div>🟥 <b>Crítico</b> (> 5h)</div>

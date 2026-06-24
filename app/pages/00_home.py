@@ -7,12 +7,17 @@ import os
 import json
 from datetime import datetime
 
-st.markdown("""
+from app.components.stepper import render_stepper
+from app.components.theme import get_active_tokens
+
+t = get_active_tokens()
+
+st.markdown(f"""
 <div style="margin-bottom:1.5rem">
     <h1 style="margin:0;font-size:2rem;font-weight:800">
         Bienvenido al Control Tower 👋
     </h1>
-    <p style="color:#8892B0;margin:.3rem 0 0;font-size:1rem">
+    <p style="color:{t.TX2};margin:.3rem 0 0;font-size:1rem">
         Sistema estocástico de apoyo a la toma de decisiones para perforación de pilotes
     </p>
 </div>
@@ -23,16 +28,11 @@ p_ok = "parametros" in st.session_state
 r_ok = "resultado" in st.session_state
 
 # ── Stepper ────────────────────────────────────────────────────
-steps = [("1", "Parametrización", p_ok), ("2", "Simulación", r_ok), ("3", "Dashboard", r_ok)]
-html = '<div class="stepper">'
-for i, (n, l, c) in enumerate(steps):
-    s = "completed" if c else ("active" if (i == 0 and not p_ok) or (i == 1 and p_ok and not r_ok) or (i == 2 and r_ok) else "")
-    icon = "✅" if c else n
-    html += f'<div class="stepper-step {s}"><span>{icon}</span><span>{l}</span></div>'
-    if i < 2:
-        html += '<span class="stepper-arrow">→</span>'
-html += '</div>'
-st.markdown(html, unsafe_allow_html=True)
+current_step = 0 if not p_ok else (1 if not r_ok else None)
+render_stepper(
+    [("1", "Parametrización", p_ok), ("2", "Simulación", r_ok), ("3", "Dashboard", r_ok)],
+    current_step=current_step,
+)
 
 # ── KPI Summary Cards ─────────────────────────────────────────
 if r_ok:
@@ -70,13 +70,13 @@ if r_ok:
     """, unsafe_allow_html=True)
 
 # ── Flow Diagram ───────────────────────────────────────────────
-st.markdown("""
+st.markdown(f"""
 <div class="flow-diagram">
-    <div class="flow-node">📋 Configurar<br/><small style="color:#8892B0">Parámetros</small></div>
+    <div class="flow-node">📋 Configurar<br/><small style="color:{t.TX2}">Parámetros</small></div>
     <span class="flow-arrow">→</span>
-    <div class="flow-node">⚙️ Simular<br/><small style="color:#8892B0">Monte Carlo</small></div>
+    <div class="flow-node">⚙️ Simular<br/><small style="color:{t.TX2}">Monte Carlo</small></div>
     <span class="flow-arrow">→</span>
-    <div class="flow-node">📊 Analizar<br/><small style="color:#8892B0">Dashboard</small></div>
+    <div class="flow-node">📊 Analizar<br/><small style="color:{t.TX2}">Dashboard</small></div>
 </div>
 """, unsafe_allow_html=True)
 

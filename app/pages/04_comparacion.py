@@ -5,28 +5,20 @@ Module 4: Scenario Comparison — compare up to 3 saved scenarios side by side.
 import streamlit as st
 import json
 import os
+import textwrap
 import plotly.graph_objects as go
 import pandas as pd
 
-from core.models.parametros import ParametrosEntrada
-from core.models.resultados import ResultadoSimulacion
+from app.components.theme import get_active_tokens, _rgba
 
-# ── Design tokens (match main.py)
-ACC  = "#4C8BF5"
-RED  = "#CC1E2A"
-CYN  = "#56B8E8"
-YEL  = "#F5A623"
-TX1  = "#E8EDF5"
-TX2  = "#8A98B8"
-CARD = "#111E38"
-BRD  = "rgba(76,139,245,0.12)"
+t = get_active_tokens()
 
-PALETTE = [ACC, RED, CYN, YEL, "#7C6FD4"]
+PALETTE = [t.ACC, t.RED, t.CYAN, t.YELLOW, t.PURPLE]
 
-st.markdown("""
+st.markdown(f"""
 <div style="margin-bottom:1.5rem">
     <h1 style="margin:0;font-size:1.8rem;font-weight:800">📊 Comparación de Escenarios</h1>
-    <p style="color:#8A98B8;margin:.2rem 0 0;font-size:.92rem">
+    <p style="color:{t.TX2};margin:.2rem 0 0;font-size:.92rem">
         Seleccioná hasta 3 escenarios guardados y comparalos lado a lado
     </p>
 </div>
@@ -39,10 +31,10 @@ archivos = sorted([f for f in os.listdir(scenarios_dir) if f.endswith(".json")])
 
 if len(archivos) < 2:
     st.markdown(f"""
-    <div style="background:rgba(76,139,245,.06);border:1px solid rgba(76,139,245,.2);
-        border-left:4px solid {ACC};border-radius:14px;padding:1.5rem 2rem;margin-top:1rem">
+    <div style="background:{_rgba(t.ACC, 0.06)};border:1px solid {_rgba(t.ACC, 0.2)};
+        border-left:4px solid {t.ACC};border-radius:14px;padding:1.5rem 2rem;margin-top:1rem">
         <strong>⚠️ Se necesitan al menos 2 escenarios guardados para comparar.</strong><br>
-        <span style="color:{TX2};font-size:.9rem">Volvé al Módulo 1 (Parametrización) y guardá diferentes configuraciones.</span>
+        <span style="color:{t.TX2};font-size:.9rem">Volvé al Módulo 1 (Parametrización) y guardá diferentes configuraciones.</span>
     </div>
     """, unsafe_allow_html=True)
     st.stop()
@@ -51,17 +43,38 @@ nombres = [f.replace(".json", "").replace("_", " ") for f in archivos]
 
 # ── Scenario selector
 st.markdown(f"""
-<div style="background:{CARD};border:1px solid {BRD};border-radius:16px;padding:1.5rem;margin-bottom:1.5rem">
-    <p style="color:{TX2};font-size:.85rem;margin:0 0 1rem;text-transform:uppercase;letter-spacing:.8px;font-weight:600">Seleccioná los escenarios a comparar</p>
+<div style="background:{t.CARD};border:1px solid {t.BRD};border-radius:16px;padding:1.5rem;margin-bottom:1.5rem">
+    <p style="color:{t.TX2};font-size:.85rem;margin:0 0 1rem;text-transform:uppercase;letter-spacing:.8px;font-weight:600">Seleccioná los escenarios a comparar</p>
 """, unsafe_allow_html=True)
 st.markdown("</div>", unsafe_allow_html=True)
+
+# ── Load scenario data
+# Not cached: scenario files are overwritten after simulation runs, so the
+# cache key must reflect file content. A simple and correct approach is to
+# read fresh each time this page renders.
+def cargar_escenario(nombre_archivo):
+    with open(os.path.join(scenarios_dir, nombre_archivo), encoding="utf-8") as f:
+        return json.load(f)
+
+
+def _tiene_resultados(archivo):
+    raw = cargar_escenario(archivo)
+    return raw.get("resultado") is not None
+
+
+# Default to scenarios that actually have simulation results.
+con_resultados = [a for a in archivos if _tiene_resultados(a)]
+default_seleccion = con_resultados[:min(2, len(con_resultados))]
+if len(default_seleccion) < 2:
+    # Fall back to the first files if fewer than 2 have results.
+    default_seleccion = archivos[:min(2, len(archivos))]
 
 seleccionados = st.multiselect(
     "Escenarios",
     options=archivos,
     format_func=lambda f: f.replace(".json", "").replace("_", " "),
     max_selections=3,
-    default=archivos[:min(2, len(archivos))],
+    default=default_seleccion,
     label_visibility="collapsed"
 )
 
@@ -69,12 +82,7 @@ if len(seleccionados) < 2:
     st.info("Seleccioná al menos 2 escenarios para ver la comparación.")
     st.stop()
 
-# ── Load scenario data
-@st.cache_data
-def cargar_escenario(nombre_archivo):
-    with open(os.path.join(scenarios_dir, nombre_archivo), encoding="utf-8") as f:
-        return json.load(f)
-
+# ── Load selected scenario data
 datos = {}
 for archivo in seleccionados:
     raw = cargar_escenario(archivo)
@@ -91,9 +99,9 @@ tiene_resultados = all(d["resultado"] is not None for d in datos.values())
 # ── Section 1: Parameters comparison
 st.markdown(f"""
 <div style="display:flex;align-items:center;gap:.75rem;margin:1.5rem 0 1rem">
-    <div style="background:{ACC};width:28px;height:28px;border-radius:50%;
-        display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.85rem;color:#fff">1</div>
-    <div style="font-weight:700;font-size:1rem;color:{TX1}">Parámetros de Entrada</div>
+    <div style="background:{t.ACC};width:28px;height:28px;border-radius:50%;
+        display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.85rem">1</div>
+    <div style="font-weight:700;font-size:1rem;color:{t.TX1}">Parámetros de Entrada</div>
 </div>
 """, unsafe_allow_html=True)
 
@@ -125,8 +133,8 @@ tiene_algun_resultado = any(d["resultado"] is not None for d in datos.values())
 
 if not tiene_algun_resultado:
     st.markdown(f"""
-    <div style="background:rgba(245,166,35,.06);border:1px solid rgba(245,166,35,.2);
-        border-left:4px solid {YEL};border-radius:14px;padding:1.2rem 1.5rem;margin:1.5rem 0">
+    <div style="background:{_rgba(t.YELLOW, 0.06)};border:1px solid {_rgba(t.YELLOW, 0.2)};
+        border-left:4px solid {t.YELLOW};border-radius:14px;padding:1.2rem 1.5rem;margin:1.5rem 0">
         ⚠️ Ninguno de los escenarios seleccionados tiene resultados de simulación. Ejecutá la simulación en el Módulo 2 para poder compararlos.
     </div>
     """, unsafe_allow_html=True)
@@ -134,17 +142,17 @@ else:
     escenarios_sin_resultado = [nombre for nombre, d in datos.items() if d["resultado"] is None]
     if escenarios_sin_resultado:
         st.markdown(f"""
-        <div style="background:rgba(245,166,35,.06);border:1px solid rgba(245,166,35,.2);
-            border-left:4px solid {YEL};border-radius:14px;padding:1rem 1.5rem;margin:1.5rem 0">
+        <div style="background:{_rgba(t.YELLOW, 0.06)};border:1px solid {_rgba(t.YELLOW, 0.2)};
+            border-left:4px solid {t.YELLOW};border-radius:14px;padding:1rem 1.5rem;margin:1.5rem 0">
             ⚠️ Los escenarios <strong>{', '.join(escenarios_sin_resultado)}</strong> aún no fueron simulados. Sus resultados se mostrarán en cero.
         </div>
         """, unsafe_allow_html=True)
 
     st.markdown(f"""
     <div style="display:flex;align-items:center;gap:.75rem;margin:2rem 0 1rem">
-        <div style="background:{RED};width:28px;height:28px;border-radius:50%;
-            display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.85rem;color:#fff">2</div>
-        <div style="font-weight:700;font-size:1rem;color:{TX1}">Resultados de Simulación</div>
+        <div style="background:{t.RED};width:28px;height:28px;border-radius:50%;
+            display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.85rem">2</div>
+        <div style="font-weight:700;font-size:1rem;color:{t.TX1}">Resultados de Simulación</div>
     </div>
     """, unsafe_allow_html=True)
 
@@ -159,38 +167,36 @@ else:
         util = kpis.get("utilizacion_mixer_pct", 0) if kpis else 0
         espera = kpis.get("tiempo_espera_mixer_promedio_h", 0) if kpis else 0
         cuello = kpis.get("cuello_botella", "—") if kpis else "No simulado"
-        color_util = RED if util > 85 else ACC
+        color_util = t.RED if util > 85 else t.ACC
 
-        col.markdown(f"""
-        <div style="background:{CARD};border:1px solid {BRD};border-radius:16px;padding:1.5rem">
-            <div style="font-weight:800;font-size:1rem;color:{ACC};margin-bottom:1.2rem;
-                border-bottom:1px solid {BRD};padding-bottom:.8rem">{nombre}</div>
-
-            <div style="margin-bottom:.8rem">
-                <div style="color:{TX2};font-size:.72rem;text-transform:uppercase;letter-spacing:.8px;font-weight:600">Duración P50</div>
-                <div style="color:{TX1};font-size:1.4rem;font-weight:800">{p50:.1f} h</div>
-                <div style="color:{TX2};font-size:.8rem">{p50/horas_dia:.1f} días laborales</div>
-            </div>
-            <div style="margin-bottom:.8rem">
-                <div style="color:{TX2};font-size:.72rem;text-transform:uppercase;letter-spacing:.8px;font-weight:600">Duración P90</div>
-                <div style="color:{TX1};font-size:1.4rem;font-weight:800">{p90:.1f} h</div>
-                <div style="color:{TX2};font-size:.8rem">{p90/horas_dia:.1f} días laborales</div>
-            </div>
-            <div style="margin-bottom:.8rem">
-                <div style="color:{TX2};font-size:.72rem;text-transform:uppercase;letter-spacing:.8px;font-weight:600">Utilización Mixer</div>
-                <div style="color:{color_util};font-size:1.4rem;font-weight:800">{util:.0f}%</div>
-            </div>
-            <div>
-                <div style="color:{TX2};font-size:.72rem;text-transform:uppercase;letter-spacing:.8px;font-weight:600">Cuello de botella</div>
-                <div style="color:{TX1};font-size:.95rem;font-weight:700;margin-top:.2rem">{cuello}</div>
-            </div>
+        col.markdown(textwrap.dedent(f"""
+        <div style="background:{t.CARD};border:1px solid {t.BRD};border-radius:16px;padding:1.5rem">
+        <div style="font-weight:800;font-size:1rem;color:{t.ACC};margin-bottom:1.2rem;border-bottom:1px solid {t.BRD};padding-bottom:.8rem">{nombre}</div>
+        <div style="margin-bottom:.8rem">
+        <div style="color:{t.TX2};font-size:.72rem;text-transform:uppercase;letter-spacing:.8px;font-weight:600">Duración P50</div>
+        <div style="color:{t.TX1};font-size:1.4rem;font-weight:800">{p50:.1f} h</div>
+        <div style="color:{t.TX2};font-size:.8rem">{p50/horas_dia:.1f} días laborales</div>
         </div>
-        """, unsafe_allow_html=True)
+        <div style="margin-bottom:.8rem">
+        <div style="color:{t.TX2};font-size:.72rem;text-transform:uppercase;letter-spacing:.8px;font-weight:600">Duración P90</div>
+        <div style="color:{t.TX1};font-size:1.4rem;font-weight:800">{p90:.1f} h</div>
+        <div style="color:{t.TX2};font-size:.8rem">{p90/horas_dia:.1f} días laborales</div>
+        </div>
+        <div style="margin-bottom:.8rem">
+        <div style="color:{t.TX2};font-size:.72rem;text-transform:uppercase;letter-spacing:.8px;font-weight:600">Utilización Mixer</div>
+        <div style="color:{color_util};font-size:1.4rem;font-weight:800">{util:.0f}%</div>
+        </div>
+        <div>
+        <div style="color:{t.TX2};font-size:.72rem;text-transform:uppercase;letter-spacing:.8px;font-weight:600">Cuello de botella</div>
+        <div style="color:{t.TX1};font-size:.95rem;font-weight:700;margin-top:.2rem">{cuello}</div>
+        </div>
+        </div>
+        """), unsafe_allow_html=True)
 
     st.markdown("<br>", unsafe_allow_html=True)
 
     # ── Bar chart: P50 and P90 comparison
-    st.markdown(f"<div style='font-weight:600;color:{TX1};margin-bottom:.5rem'>Duración del Proyecto — P50 vs P90</div>", unsafe_allow_html=True)
+    st.markdown(f"<div style='font-weight:600;color:{t.TX1};margin-bottom:.5rem'>Duración del Proyecto — P50 vs P90</div>", unsafe_allow_html=True)
     nombres_list = list(datos.keys())
     
     def get_kpi_val(nombre, key):
@@ -202,22 +208,22 @@ else:
     p90s = [get_kpi_val(n, "tiempo_proyecto_p90_h") for n in nombres_list]
 
     fig_bar = go.Figure()
-    fig_bar.add_trace(go.Bar(name="P50", x=nombres_list, y=p50s, marker_color=ACC, opacity=0.9))
-    fig_bar.add_trace(go.Bar(name="P90", x=nombres_list, y=p90s, marker_color=CYN, opacity=0.9))
+    fig_bar.add_trace(go.Bar(name="P50", x=nombres_list, y=p50s, marker_color=t.ACC, opacity=0.9))
+    fig_bar.add_trace(go.Bar(name="P90", x=nombres_list, y=p90s, marker_color=t.CYAN, opacity=0.9))
     fig_bar.update_layout(
         plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)",
         barmode="group", height=320,
-        font=dict(family="Inter,sans-serif", color=TX1, size=12),
-        legend=dict(font=dict(color=TX2)),
+        font=dict(family="Inter,sans-serif", color=t.TX1, size=12),
+        legend=dict(font=dict(color=t.TX2)),
         yaxis_title="Horas",
         margin=dict(t=20, b=40, l=50, r=20),
     )
-    fig_bar.update_xaxes(gridcolor="rgba(76,139,245,0.08)")
-    fig_bar.update_yaxes(gridcolor="rgba(76,139,245,0.08)")
+    fig_bar.update_xaxes(gridcolor=t.GRD)
+    fig_bar.update_yaxes(gridcolor=t.GRD)
     st.plotly_chart(fig_bar, use_container_width=True)
 
     # ── Radar chart
-    st.markdown(f"<div style='font-weight:600;color:{TX1};margin:.5rem 0'>Perfil de Eficiencia (Radar)</div>", unsafe_allow_html=True)
+    st.markdown(f"<div style='font-weight:600;color:{t.TX1};margin:.5rem 0'>Perfil de Eficiencia (Radar)</div>", unsafe_allow_html=True)
     cats = ["Velocidad (P50↓)", "Confiabilidad (P90-P50↓)", "Eficiencia Mixer↑", "Sin Esperas↑"]
 
     def normalizar(val, mn, mx, invertir=False):
@@ -251,13 +257,13 @@ else:
         ))
     fig_rad.update_layout(
         polar=dict(
-            bgcolor="rgba(17,30,56,0.8)",
-            radialaxis=dict(visible=True, range=[0, 1], color=TX2),
-            angularaxis=dict(color=TX1),
+            bgcolor=_rgba(t.CARD, 0.8),
+            radialaxis=dict(visible=True, range=[0, 1], color=t.TX2),
+            angularaxis=dict(color=t.TX1),
         ),
         plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)",
         height=380, margin=dict(t=20, b=20, l=60, r=60),
-        font=dict(family="Inter,sans-serif", color=TX1),
-        legend=dict(font=dict(color=TX2)),
+        font=dict(family="Inter,sans-serif", color=t.TX1),
+        legend=dict(font=dict(color=t.TX2)),
     )
     st.plotly_chart(fig_rad, use_container_width=True)

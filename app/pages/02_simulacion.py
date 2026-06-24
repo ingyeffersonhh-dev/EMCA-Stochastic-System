@@ -8,11 +8,15 @@ import time
 import math
 
 from core.simulation.engine import ejecutar_simulacion
+from app.components.stepper import render_stepper
+from app.components.theme import get_active_tokens
 
-st.markdown("""
+t = get_active_tokens()
+
+st.markdown(f"""
 <div style="margin-bottom:1.5rem">
     <h1 style="margin:0;font-size:1.8rem;font-weight:800">⚙️ Motor Estocástico</h1>
-    <p style="color:#8892B0;margin:.2rem 0 0;font-size:.92rem">
+    <p style="color:{t.TX2};margin:.2rem 0 0;font-size:.92rem">
         Configuración y ejecución de la simulación de Monte Carlo (SimPy)
     </p>
 </div>
@@ -21,20 +25,14 @@ st.markdown("""
 # --- Stepper ---
 parametros_ok = "parametros" in st.session_state
 resultado_ok = "resultado" in st.session_state
-stepper_html = '<div class="stepper">'
-steps = [
-    ("1", "Parametrización", True),
-    ("2", "Simulación", True),
-    ("3", "Dashboard", resultado_ok),
-]
-for i, (num, label, completed) in enumerate(steps):
-    status = "completed" if completed else ("active" if i == 1 else "")
-    icon = "✅" if completed else num
-    stepper_html += f'<div class="stepper-step {status}"><span>{icon}</span><span>{label}</span></div>'
-    if i < len(steps) - 1:
-        stepper_html += '<span class="stepper-arrow">→</span>'
-stepper_html += '</div>'
-st.markdown(stepper_html, unsafe_allow_html=True)
+render_stepper(
+    [
+        ("1", "Parametrización", True),
+        ("2", "Simulación", True),
+        ("3", "Dashboard", resultado_ok),
+    ],
+    current_step=1,
+)
 
 
 # --- Verificar pre-condición ---
@@ -46,7 +44,7 @@ params = st.session_state["parametros"]
 
 # --- Resumen del escenario ---
 with st.expander("📋 Resumen del escenario configurado", expanded=True):
-    vol_total = math.pi * (params.diametro_m / 2) ** 2 * params.longitud_m * params.cantidad_pilotes
+    vol_total = params.volumen_total_m3
     st.markdown(f"""
     <div class="kpi-grid">
         <div class="kpi-card" style="padding:1rem">
@@ -79,7 +77,7 @@ t_perf_ajustado = params.tiempo_perforacion_ajustado_media
 t_colado = params.tiempo_colado_h_media
 t_estimado_pilote = t_perf_ajustado + t_colado + t_transporte / params.num_mixers
 t_total_estimado = t_estimado_pilote * params.cantidad_pilotes
-dias_estimados = t_total_estimado / horas_dia
+dias_estimados = params.dias_estimados
 
 # Mini preview de resultados esperados
 st.markdown(f"""
@@ -213,12 +211,12 @@ if ejecutar:
             <div class="kpi-card kpi-accent-green">
                 <div class="kpi-label">Duración P50</div>
                 <div class="kpi-value">{k.tiempo_proyecto_p50_h:.1f} h</div>
-                <div style="color:#A0AEC0;font-size:0.8rem;margin-top:0.2rem">{k.tiempo_proyecto_p50_h/horas_dia:.1f} días</div>
+                <div style="color:{t.TX2};font-size:0.8rem;margin-top:0.2rem">{k.tiempo_proyecto_p50_h/horas_dia:.1f} días</div>
             </div>
             <div class="kpi-card kpi-accent-cyan">
                 <div class="kpi-label">Duración P90</div>
                 <div class="kpi-value">{k.tiempo_proyecto_p90_h:.1f} h</div>
-                <div style="color:#A0AEC0;font-size:0.8rem;margin-top:0.2rem">{k.tiempo_proyecto_p90_h/horas_dia:.1f} días</div>
+                <div style="color:{t.TX2};font-size:0.8rem;margin-top:0.2rem">{k.tiempo_proyecto_p90_h/horas_dia:.1f} días</div>
             </div>
             <div class="kpi-card">
                 <div class="kpi-label">Cuello de botella</div>
@@ -227,7 +225,7 @@ if ejecutar:
             <div class="kpi-card {util_color}">
                 <div class="kpi-label">Utilización Mixer</div>
                 <div class="kpi-value">{k.utilizacion_mixer_pct:.0f}%</div>
-                <div style="color:#A0AEC0;font-size:0.8rem;margin-top:0.2rem">{'⚠️ Alta' if k.utilizacion_mixer_pct > 85 else '✅ Normal'}</div>
+                <div style="color:{t.TX2};font-size:0.8rem;margin-top:0.2rem">{'⚠️ Alta' if k.utilizacion_mixer_pct > 85 else '✅ Normal'}</div>
             </div>
         </div>
         """, unsafe_allow_html=True)

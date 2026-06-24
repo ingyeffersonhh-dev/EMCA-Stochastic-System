@@ -12,11 +12,16 @@ from core.models.parametros import ParametrosEntrada, TipoSuelo, TipoDistribucio
 from core.models.resultados import ResultadoSimulacion
 import dataclasses
 
+from app.components.stepper import render_stepper
+from app.components.theme import get_active_tokens, _rgba
+
+t = get_active_tokens()
+
 # ── Page header ────────────────────────────────────────────────
-st.markdown("""
+st.markdown(f"""
 <div style="margin-bottom:1.5rem">
     <h1 style="margin:0;font-size:1.8rem;font-weight:800">📋 Parámetros de Operación</h1>
-    <p style="color:#8892B0;margin:.2rem 0 0;font-size:.92rem">
+    <p style="color:{t.TX2};margin:.2rem 0 0;font-size:.92rem">
         Configure la geometría, logística y variables estocásticas del proyecto
     </p>
 </div>
@@ -28,20 +33,14 @@ if "mensaje_carga" in st.session_state:
 
 # ── Stepper ────────────────────────────────────────────────────
 parametros_ok = "parametros" in st.session_state
-stepper_html = '<div class="stepper">'
-steps = [
-    ("1", "Parametrización", True),
-    ("2", "Simulación", parametros_ok),
-    ("3", "Dashboard", "resultado" in st.session_state),
-]
-for i, (num, label, completed) in enumerate(steps):
-    status = "completed" if completed else ("active" if i == 0 else "")
-    icon = "✅" if completed else num
-    stepper_html += f'<div class="stepper-step {status}"><span>{icon}</span><span>{label}</span></div>'
-    if i < len(steps) - 1:
-        stepper_html += '<span class="stepper-arrow">→</span>'
-stepper_html += '</div>'
-st.markdown(stepper_html, unsafe_allow_html=True)
+render_stepper(
+    [
+        ("1", "Parametrización", True),
+        ("2", "Simulación", parametros_ok),
+        ("3", "Dashboard", "resultado" in st.session_state),
+    ],
+    current_step=0,
+)
 
 # ── Sidebar: Scenarios ─────────────────────────────────────────
 with st.sidebar:
@@ -114,10 +113,10 @@ with st.form("form_parametros", clear_on_submit=False):
     ])
 
     with tab_geom:
-        st.markdown("""
+        st.markdown(f"""
         <div style="margin-bottom: 1.2rem;">
-            <div style="font-weight:700;font-size:1rem;color:#E2E8F0">Geometría del Pilote</div>
-            <div style="font-size:.8rem;color:#8892B0">Defina las dimensiones físicas y la cantidad de pilotes del proyecto</div>
+            <div style="font-weight:700;font-size:1rem;color:{t.TX1}">Geometría del Pilote</div>
+            <div style="font-size:.8rem;color:{t.TX2}">Defina las dimensiones físicas y la cantidad de pilotes del proyecto</div>
         </div>
         """, unsafe_allow_html=True)
 
@@ -130,7 +129,7 @@ with st.form("form_parametros", clear_on_submit=False):
                 step=0.05,
                 help="Diámetro del pilote colado in situ. Valores típicos: 0.6 m – 1.2 m"
             )
-            st.markdown(f'<div style="text-align:center;font-size:1.4rem;font-weight:800;color:#4C8BF5;margin-top:-.5rem">{diametro:.2f} m</div>', unsafe_allow_html=True)
+            st.markdown(f'<div style="text-align:center;font-size:1.4rem;font-weight:800;color:{t.ACC};margin-top:-.5rem">{diametro:.2f} m</div>', unsafe_allow_html=True)
         with c2:
             longitud = st.slider(
                 "Longitud (m)",
@@ -139,7 +138,7 @@ with st.form("form_parametros", clear_on_submit=False):
                 step=0.5,
                 help="Longitud de empotramiento del pilote en el suelo"
             )
-            st.markdown(f'<div style="text-align:center;font-size:1.4rem;font-weight:800;color:#56B8E8;margin-top:-.5rem">{longitud:.1f} m</div>', unsafe_allow_html=True)
+            st.markdown(f'<div style="text-align:center;font-size:1.4rem;font-weight:800;color:{t.CYAN};margin-top:-.5rem">{longitud:.1f} m</div>', unsafe_allow_html=True)
         with c3:
             cantidad = st.number_input(
                 "Cantidad de pilotes",
@@ -149,40 +148,41 @@ with st.form("form_parametros", clear_on_submit=False):
                 help="Número total de pilotes a construir en esta partida"
             )
 
-        vol_unit = math.pi * (diametro / 2) ** 2 * longitud
+        area = math.pi * (diametro / 2) ** 2
+        vol_unit = area * longitud
         vol_total = vol_unit * cantidad
         st.markdown(f"""
         <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.75rem;margin:1rem 0 0.5rem">
-            <div style="background:rgba(76,139,245,0.08);border:1px solid rgba(76,139,245,0.2);
+            <div style="background:{_rgba(t.ACC, 0.08)};border:1px solid {_rgba(t.ACC, 0.2)};
                 border-radius:12px;padding:1rem;text-align:center">
-                <div style="color:#8892B0;font-size:.72rem;text-transform:uppercase;letter-spacing:.8px;font-weight:600">Sección transversal</div>
-                <div style="color:#E2E8F0;font-size:1.2rem;font-weight:800;margin-top:.3rem">{math.pi*(diametro/2)**2:.3f} m²</div>
+                <div style="color:{t.TX2};font-size:.72rem;text-transform:uppercase;letter-spacing:.8px;font-weight:600">Sección transversal</div>
+                <div style="color:{t.TX1};font-size:1.2rem;font-weight:800;margin-top:.3rem">{area:.3f} m²</div>
             </div>
-            <div style="background:rgba(86,184,232,0.08);border:1px solid rgba(86,184,232,0.2);
+            <div style="background:{_rgba(t.CYAN, 0.08)};border:1px solid {_rgba(t.CYAN, 0.2)};
                 border-radius:12px;padding:1rem;text-align:center">
-                <div style="color:#8892B0;font-size:.72rem;text-transform:uppercase;letter-spacing:.8px;font-weight:600">Volumen por pilote</div>
-                <div style="color:#E2E8F0;font-size:1.2rem;font-weight:800;margin-top:.3rem">{vol_unit:.3f} m³</div>
+                <div style="color:{t.TX2};font-size:.72rem;text-transform:uppercase;letter-spacing:.8px;font-weight:600">Volumen por pilote</div>
+                <div style="color:{t.TX1};font-size:1.2rem;font-weight:800;margin-top:.3rem">{vol_unit:.3f} m³</div>
             </div>
-            <div style="background:rgba(76,139,245,0.08);border:1px solid rgba(76,139,245,0.2);
+            <div style="background:{_rgba(t.ACC, 0.08)};border:1px solid {_rgba(t.ACC, 0.2)};
                 border-radius:12px;padding:1rem;text-align:center">
-                <div style="color:#8892B0;font-size:.72rem;text-transform:uppercase;letter-spacing:.8px;font-weight:600">Volumen total de hormigón</div>
-                <div style="color:#4C8BF5;font-size:1.2rem;font-weight:800;margin-top:.3rem">{vol_total:.1f} m³</div>
+                <div style="color:{t.TX2};font-size:.72rem;text-transform:uppercase;letter-spacing:.8px;font-weight:600">Volumen total de hormigón</div>
+                <div style="color:{t.ACC};font-size:1.2rem;font-weight:800;margin-top:.3rem">{vol_total:.1f} m³</div>
             </div>
         </div>
         """, unsafe_allow_html=True)
 
     with tab_log:
-        st.markdown("""
+        st.markdown(f"""
         <div style="margin-bottom: 1.2rem;">
-            <div style="font-weight:700;font-size:1rem;color:#E2E8F0">Condiciones del Terreno y Logística</div>
-            <div style="font-size:.8rem;color:#8892B0">Tipo de suelo, flota de mixers y distancia a la planta concretera</div>
+            <div style="font-weight:700;font-size:1rem;color:{t.TX1}">Condiciones del Terreno y Logística</div>
+            <div style="font-size:.8rem;color:{t.TX2}">Tipo de suelo, flota de mixers y distancia a la planta concretera</div>
         </div>
         """, unsafe_allow_html=True)
 
         col_left, col_right = st.columns([1, 1])
 
         with col_left:
-            st.markdown('<p style="font-weight:600;font-size:.9rem;color:#E2E8F0;margin-bottom:.5rem">🌍 Tipo de suelo</p>', unsafe_allow_html=True)
+            st.markdown(f'<p style="font-weight:600;font-size:.9rem;color:{t.TX1};margin-bottom:.5rem">🌍 Tipo de suelo</p>', unsafe_allow_html=True)
             suelo_opts = ["suelo_seco", "suelo_agua"]
             suelo_lbls = {"suelo_seco": "🟢 Suelo Seco  ×1.0", "suelo_agua": "🔵 Suelo con Agua  ×1.35"}
             suelo_facts = {"suelo_seco": 1.0, "suelo_agua": 1.35}
@@ -203,7 +203,7 @@ with st.form("form_parametros", clear_on_submit=False):
                 label_visibility="collapsed"
             )
             factor = suelo_facts[tipo_suelo]
-            st.markdown(f'<p style="font-size:.82rem;color:#8892B0;margin-top:-.3rem">{suelo_descs[tipo_suelo]}</p>', unsafe_allow_html=True)
+            st.markdown(f'<p style="font-size:.82rem;color:{t.TX2};margin-top:-.3rem">{suelo_descs[tipo_suelo]}</p>', unsafe_allow_html=True)
 
             uso_lodo = st.checkbox(
                 "Usar lodo bentonítico",
@@ -212,7 +212,7 @@ with st.form("form_parametros", clear_on_submit=False):
             )
 
         with col_right:
-            st.markdown('<p style="font-weight:600;font-size:.9rem;color:#E2E8F0;margin-bottom:.5rem">🚛 Flota de mixers</p>', unsafe_allow_html=True)
+            st.markdown(f'<p style="font-weight:600;font-size:.9rem;color:{t.TX1};margin-bottom:.5rem">🚛 Flota de mixers</p>', unsafe_allow_html=True)
             num_mixers = st.slider(
                 "Mixers activos",
                 min_value=1, max_value=10,
@@ -257,47 +257,47 @@ with st.form("form_parametros", clear_on_submit=False):
         t_transp = (distancia * 2) / vel_media
         viajes_dia = horas_dia / t_transp if t_transp > 0 else 0
 
-        color_mixers = "#00E68A" if num_mixers >= math.ceil(t_transp) else "#FFD43B"
+        color_mixers = t.GREEN if num_mixers >= math.ceil(t_transp) else t.YELLOW
         msg_mixers = "✅ Flota suficiente" if num_mixers >= math.ceil(t_transp) else "⚠️ Flota puede ser insuficiente"
 
         st.markdown(f"""
         <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:.75rem;margin:1rem 0 0.5rem">
-            <div style="background:rgba(204,30,42,0.08);border:1px solid rgba(204,30,42,0.2);
+            <div style="background:{_rgba(t.RED, 0.08)};border:1px solid {_rgba(t.RED, 0.2)};
                 border-radius:12px;padding:1rem;text-align:center">
-                <div style="color:#8892B0;font-size:.72rem;text-transform:uppercase;letter-spacing:.8px;font-weight:600">Ciclo de viaje</div>
-                <div style="color:#E2E8F0;font-size:1.2rem;font-weight:800;margin-top:.3rem">{t_transp:.2f} h</div>
+                <div style="color:{t.TX2};font-size:.72rem;text-transform:uppercase;letter-spacing:.8px;font-weight:600">Ciclo de viaje</div>
+                <div style="color:{t.TX1};font-size:1.2rem;font-weight:800;margin-top:.3rem">{t_transp:.2f} h</div>
             </div>
-            <div style="background:rgba(255,212,59,0.08);border:1px solid rgba(255,212,59,0.2);
+            <div style="background:{_rgba(t.YELLOW, 0.08)};border:1px solid {_rgba(t.YELLOW, 0.2)};
                 border-radius:12px;padding:1rem;text-align:center">
-                <div style="color:#8892B0;font-size:.72rem;text-transform:uppercase;letter-spacing:.8px;font-weight:600">Viajes/día por mixer</div>
-                <div style="color:#E2E8F0;font-size:1.2rem;font-weight:800;margin-top:.3rem">{viajes_dia:.1f}</div>
+                <div style="color:{t.TX2};font-size:.72rem;text-transform:uppercase;letter-spacing:.8px;font-weight:600">Viajes/día por mixer</div>
+                <div style="color:{t.TX1};font-size:1.2rem;font-weight:800;margin-top:.3rem">{viajes_dia:.1f}</div>
             </div>
-            <div style="background:rgba(76,139,245,0.08);border:1px solid rgba(76,139,245,0.2);
+            <div style="background:{_rgba(t.ACC, 0.08)};border:1px solid {_rgba(t.ACC, 0.2)};
                 border-radius:12px;padding:1rem;text-align:center">
-                <div style="color:#8892B0;font-size:.72rem;text-transform:uppercase;letter-spacing:.8px;font-weight:600">Viajes/día (flota)</div>
-                <div style="color:#E2E8F0;font-size:1.2rem;font-weight:800;margin-top:.3rem">{viajes_dia*num_mixers:.1f}</div>
+                <div style="color:{t.TX2};font-size:.72rem;text-transform:uppercase;letter-spacing:.8px;font-weight:600">Viajes/día (flota)</div>
+                <div style="color:{t.TX1};font-size:1.2rem;font-weight:800;margin-top:.3rem">{viajes_dia*num_mixers:.1f}</div>
             </div>
-            <div style="background:rgba(76,139,245,0.06);border:1px solid rgba(76,139,245,0.15);
+            <div style="background:{_rgba(t.ACC, 0.06)};border:1px solid {_rgba(t.ACC, 0.15)};
                 border-radius:12px;padding:1rem;text-align:center">
-                <div style="color:#8892B0;font-size:.72rem;text-transform:uppercase;letter-spacing:.8px;font-weight:600">Estado flota</div>
+                <div style="color:{t.TX2};font-size:.72rem;text-transform:uppercase;letter-spacing:.8px;font-weight:600">Estado flota</div>
                 <div style="color:{color_mixers};font-size:.9rem;font-weight:700;margin-top:.5rem">{msg_mixers}</div>
             </div>
         </div>
         """, unsafe_allow_html=True)
 
     with tab_estoc:
-        st.markdown("""
+        st.markdown(f"""
         <div style="margin-bottom: 1.2rem;">
-            <div style="font-weight:700;font-size:1rem;color:#E2E8F0">Variables Estocásticas (Tiempos)</div>
-            <div style="font-size:.8rem;color:#8892B0">Defina la distribución probabilística de los tiempos de perforación y colado (en minutos)</div>
+            <div style="font-weight:700;font-size:1rem;color:{t.TX1}">Variables Estocásticas (Tiempos)</div>
+            <div style="font-size:.8rem;color:{t.TX2}">Defina la distribución probabilística de los tiempos de perforación y colado (en minutos)</div>
         </div>
         """, unsafe_allow_html=True)
 
         col_perf, col_col = st.columns(2)
 
         with col_perf:
-            st.markdown('<div style="background:rgba(76,139,245,0.06);border:1px solid rgba(76,139,245,0.2);border-radius:14px;padding:1.2rem">', unsafe_allow_html=True)
-            st.markdown('<p style="font-weight:700;font-size:.95rem;color:#4C8BF5;margin:0 0 1rem">🔩 Perforación</p>', unsafe_allow_html=True)
+            st.markdown(f'<div style="background:{_rgba(t.ACC, 0.06)};border:1px solid {_rgba(t.ACC, 0.2)};border-radius:14px;padding:1.2rem">', unsafe_allow_html=True)
+            st.markdown(f'<p style="font-weight:700;font-size:.95rem;color:{t.ACC};margin:0 0 1rem">🔩 Perforación</p>', unsafe_allow_html=True)
 
             col_p1, col_p2 = st.columns(2)
             with col_p1:
@@ -325,18 +325,18 @@ with st.form("form_parametros", clear_on_submit=False):
             dist_perf = st.selectbox("Distribución", opts_perf, index=idx_perf, key="dp", help="Distribución estadística que modela el tiempo de perforación")
 
             t_perf_aj = t_perf_media * factor
-            color_perf = "#FF6B6B" if factor > 1.1 else "#00E68A"
+            color_perf = t.RED if factor > 1.1 else t.GREEN
             st.markdown(f"""
-            <div style="margin-top:.8rem;padding:.6rem .8rem;background:rgba(0,0,0,0.2);border-radius:8px">
-                <span style="font-size:.8rem;color:#8892B0">Tiempo ajustado por suelo:</span>
+            <div style="margin-top:.8rem;padding:.6rem .8rem;background:{_rgba(t.TX1, 0.06)};border-radius:8px">
+                <span style="font-size:.8rem;color:{t.TX2}">Tiempo ajustado por suelo:</span>
                 <span style="font-size:.9rem;font-weight:700;color:{color_perf};margin-left:.4rem">{t_perf_aj:.0f} min ({t_perf_aj/60:.1f}h)</span>
             </div>
             """, unsafe_allow_html=True)
             st.markdown('</div>', unsafe_allow_html=True)
 
         with col_col:
-            st.markdown('<div style="background:rgba(76,139,245,0.06);border:1px solid rgba(76,139,245,0.2);border-radius:14px;padding:1.2rem">', unsafe_allow_html=True)
-            st.markdown('<p style="font-weight:700;font-size:.95rem;color:#4C8BF5;margin:0 0 1rem">🪣 Colado</p>', unsafe_allow_html=True)
+            st.markdown(f'<div style="background:{_rgba(t.ACC, 0.06)};border:1px solid {_rgba(t.ACC, 0.2)};border-radius:14px;padding:1.2rem">', unsafe_allow_html=True)
+            st.markdown(f'<p style="font-weight:700;font-size:.95rem;color:{t.ACC};margin:0 0 1rem">🪣 Colado</p>', unsafe_allow_html=True)
 
             col_c1, col_c2 = st.columns(2)
             with col_c1:
@@ -365,18 +365,18 @@ with st.form("form_parametros", clear_on_submit=False):
 
             ciclo_est = (t_perf_aj + t_colado_media) / 60
             st.markdown(f"""
-            <div style="margin-top:.8rem;padding:.6rem .8rem;background:rgba(0,0,0,0.2);border-radius:8px">
-                <span style="font-size:.8rem;color:#8892B0">Ciclo estimado por pilote:</span>
-                <span style="font-size:.9rem;font-weight:700;color:#56B8E8;margin-left:.4rem">{ciclo_est:.1f}h</span>
+            <div style="margin-top:.8rem;padding:.6rem .8rem;background:{_rgba(t.TX1, 0.06)};border-radius:8px">
+                <span style="font-size:.8rem;color:{t.TX2}">Ciclo estimado por pilote:</span>
+                <span style="font-size:.9rem;font-weight:700;color:{t.CYAN};margin-left:.4rem">{ciclo_est:.1f}h</span>
             </div>
             """, unsafe_allow_html=True)
             st.markdown('</div>', unsafe_allow_html=True)
 
     with tab_save:
-        st.markdown("""
+        st.markdown(f"""
         <div style="margin-bottom: 1.2rem;">
-            <div style="font-weight:700;font-size:1rem;color:#E2E8F0">Identificación y Guardado</div>
-            <div style="font-size:.8rem;color:#8892B0">Asigne un nombre a este escenario para guardarlo y poder compararlo después</div>
+            <div style="font-weight:700;font-size:1rem;color:{t.TX1}">Identificación y Guardado</div>
+            <div style="font-size:.8rem;color:{t.TX2}">Asigne un nombre a este escenario para guardarlo y poder compararlo después</div>
         </div>
         """, unsafe_allow_html=True)
 

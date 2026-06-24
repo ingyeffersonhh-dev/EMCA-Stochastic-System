@@ -1,7 +1,8 @@
 """
 app/main.py
 Entry point — EMCA Sistema de Pilotes.
-Premium dark UI inspired by modern SaaS dashboards.
+Mode-aware UI built on the dual-palette token system (theme.py).
+Light is the default; users opt into dark via Streamlit's native theme toggle.
 """
 import streamlit as st
 import os
@@ -18,26 +19,10 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# ── Design Tokens — EMCA Brand Palette ────────────────────────
-# Background: deep navy blues that reflect the company's identity
-bg      = "#0A0F1E"   # darkest navy
-bg2     = "#0D1528"   # sidebar navy
-card    = "#111E38"   # card surface
-card_h  = "#162445"   # card hover
-tx1     = "#E8EDF5"   # primary text (slightly warm white)
-tx2     = "#8A98B8"   # secondary text
-tx3     = "#3D4F70"   # muted text
-brd     = "rgba(76,139,245,0.12)"  # borders with brand blue tint
-shd     = "rgba(0,0,0,0.5)"
-# Brand colors from logo
-acc     = "#4C8BF5"   # bright corporate blue (primary interactive)
-acc2    = "#3A79E8"   # primary button hover
-red     = "#CC1E2A"   # EMCA red (alerts, accents)
-red2    = "#E8232F"   # red hover
-blue    = "#4C8BF5"   # alias for acc
-yellow  = "#F5A623"   # warm amber (warnings, neutral)
-cyan    = "#56B8E8"   # light blue (data highlights)
-purple  = "#7C6FD4"   # kept for secondary charts
+# ── Design Tokens — active palette resolved at runtime ──────────
+from app.components.theme import get_active_tokens, _rgba
+
+t = get_active_tokens()
 
 css = f"""
 <style>
@@ -45,50 +30,50 @@ css = f"""
 
 /* ═══ Base ═══ */
 html, body, [class*="css"] {{ font-family:'Inter',sans-serif; }}
-.stApp {{ background:{bg}!important; }}
+.stApp {{ background:{t.BG}!important; }}
 [data-testid="stHeader"] {{ background:transparent!important; }}
 
 /* ═══ Sidebar ═══ */
 [data-testid="stSidebar"] {{
-    background:{bg2}!important;
-    border-right:1px solid {brd};
+    background:{t.BG2}!important;
+    border-right:1px solid {t.BRD};
 }}
 [data-testid="stSidebarNav"] {{ padding-top:.5rem; }}
 [data-testid="stSidebarNav"] a {{
     border-radius:10px; margin:2px 8px; padding:6px 12px;
     transition:all .2s ease;
 }}
-[data-testid="stSidebarNav"] a:hover {{ background:rgba(76,139,245,.1); }}
+[data-testid="stSidebarNav"] a:hover {{ background:{_rgba(t.ACC, 0.1)}; }}
 [data-testid="stSidebarNav"] a[aria-selected="true"] {{
-    background:rgba(76,139,245,.15)!important;
-    border-left:3px solid {acc};
+    background:{_rgba(t.ACC, 0.15)}!important;
+    border-left:3px solid {t.ACC};
 }}
 
 /* ═══ Metric Cards ═══ */
 div[data-testid="metric-container"] {{
-    background:{card};
-    border:1px solid {brd};
+    background:{t.CARD};
+    border:1px solid {t.BRD};
     border-radius:16px;
     padding:1.25rem 1.5rem;
-    box-shadow:0 4px 20px {shd};
+    box-shadow:0 4px 20px {t.SHD};
     transition:transform .25s ease,box-shadow .25s ease;
     position:relative;
     overflow:hidden;
 }}
 div[data-testid="metric-container"]::before {{
     content:'';position:absolute;top:0;left:0;width:4px;height:100%;
-    background:linear-gradient(180deg,{acc},{cyan});border-radius:4px 0 0 4px;
+    background:linear-gradient(180deg,{t.ACC},{t.CYAN});border-radius:4px 0 0 4px;
 }}
 div[data-testid="metric-container"]:hover {{
     transform:translateY(-3px);
-    box-shadow:0 8px 30px {shd},0 0 20px rgba(76,139,245,.1);
+    box-shadow:0 8px 30px {t.SHD},0 0 20px {_rgba(t.ACC, 0.1)};
 }}
 div[data-testid="metric-container"] label {{
-    color:{tx2}!important;font-size:.78rem!important;
+    color:{t.TX2}!important;font-size:.78rem!important;
     text-transform:uppercase;letter-spacing:.8px;font-weight:600!important;
 }}
 div[data-testid="metric-container"] [data-testid="stMetricValue"] {{
-    font-size:1.8rem!important;font-weight:800!important;color:{tx1}!important;
+    font-size:1.8rem!important;font-weight:800!important;color:{t.TX1}!important;
 }}
 div[data-testid="metric-container"] [data-testid="stMetricDelta"] {{
     font-size:.8rem!important;font-weight:600!important;
@@ -96,94 +81,94 @@ div[data-testid="metric-container"] [data-testid="stMetricDelta"] {{
 
 /* ═══ Buttons ═══ */
 .stButton > button {{
-    background:linear-gradient(135deg,{acc},{acc2})!important;
-    color:#FFFFFF!important; border:none!important;
+    background:linear-gradient(135deg,{t.ACC},{t.ACC2})!important;
+    color:{t.CARD}!important; border:none!important;
     border-radius:12px; font-weight:700; font-size:.9rem;
     letter-spacing:.3px; padding:.6rem 1.5rem;
     transition:all .25s cubic-bezier(.4,0,.2,1);
-    box-shadow:0 4px 15px rgba(76,139,245,.3);
+    box-shadow:0 4px 15px {_rgba(t.ACC, 0.3)};
 }}
 .stButton > button:hover {{
     transform:translateY(-2px)!important;
-    box-shadow:0 8px 25px rgba(76,139,245,.4)!important;
+    box-shadow:0 8px 25px {_rgba(t.ACC, 0.4)}!important;
     filter:brightness(1.1);
 }}
 .stButton > button[kind="secondary"],
 .stButton > button[data-testid="stBaseButton-secondary"] {{
-    background:{card}!important; color:{tx1}!important;
-    border:1px solid {brd}!important;
-    box-shadow:0 2px 8px {shd}!important;
+    background:{t.CARD}!important; color:{t.TX1}!important;
+    border:1px solid {t.BRD}!important;
+    box-shadow:0 2px 8px {t.SHD}!important;
 }}
 .stButton > button[kind="secondary"]:hover,
 .stButton > button[data-testid="stBaseButton-secondary"]:hover {{
-    background:{card_h}!important;
-    border-color:rgba(76,139,245,.4)!important;
+    background:{t.CARD_H}!important;
+    border-color:{_rgba(t.ACC, 0.4)}!important;
 }}
 
 /* ═══ Tabs ═══ */
 .stTabs [data-baseweb="tab-list"] {{
-    background:{card}; border-radius:14px; padding:4px; gap:4px;
-    border:1px solid {brd};
+    background:{t.CARD}; border-radius:14px; padding:4px; gap:4px;
+    border:1px solid {t.BRD};
 }}
 .stTabs [data-baseweb="tab"] {{
     border-radius:10px; padding:10px 22px;
-    background:transparent; color:{tx2}!important;
+    background:transparent; color:{t.TX2}!important;
     font-weight:500; transition:all .2s ease;
 }}
 .stTabs [aria-selected="true"] {{
-    background:rgba(76,139,245,.15)!important;
-    color:{acc}!important; font-weight:700;
-    box-shadow:0 2px 8px rgba(76,139,245,.15);
+    background:{_rgba(t.ACC, 0.15)}!important;
+    color:{t.ACC}!important; font-weight:700;
+    box-shadow:0 2px 8px {_rgba(t.ACC, 0.15)};
     border-bottom:none!important;
 }}
 
 /* ═══ Typography ═══ */
-h1,h2,h3,h4,h5,h6 {{ color:{tx1}!important; }}
-p,span,div,label,li {{ color:{tx1}; }}
+h1,h2,h3,h4,h5,h6 {{ color:{t.TX1}!important; }}
+p,span,div,label,li {{ color:{t.TX1}; }}
 [data-testid="stMarkdownContainer"] p,
 [data-testid="stMarkdownContainer"] span,
-[data-testid="stMarkdownContainer"] li {{ color:{tx1}!important; }}
-[data-testid="stCaption"] {{ color:{tx2}!important; }}
+[data-testid="stMarkdownContainer"] li {{ color:{t.TX1}!important; }}
+[data-testid="stCaption"] {{ color:{t.TX2}!important; }}
 
 /* ═══ Forms & Inputs ═══ */
 .stTextInput > div > div > input,
 .stNumberInput > div > div > input,
 .stTextArea > div > div > textarea {{
-    background:{card}!important; color:{tx1}!important;
-    border:1px solid {brd}!important; border-radius:10px!important;
+    background:{t.CARD}!important; color:{t.TX1}!important;
+    border:1px solid {t.BRD}!important; border-radius:10px!important;
     transition:border-color .2s ease;
 }}
 .stTextInput > div > div > input:focus,
 .stNumberInput > div > div > input:focus {{
-    border-color:{acc}!important;
-    box-shadow:0 0 0 2px rgba(76,139,245,.2)!important;
+    border-color:{t.ACC}!important;
+    box-shadow:0 0 0 2px {_rgba(t.ACC, 0.2)}!important;
 }}
-.stSlider > div > div > div > div {{ background:{acc}!important; }}
-.stCheckbox > label > div {{ background:{card}!important; border-color:{brd}!important; }}
-.stRadio > label > div {{ background:{card}!important; border-color:{brd}!important; }}
+.stSlider > div > div > div > div {{ background:{t.ACC}!important; }}
+.stCheckbox > label > div {{ background:{t.CARD}!important; border-color:{t.BRD}!important; }}
+.stRadio > label > div {{ background:{t.CARD}!important; border-color:{t.BRD}!important; }}
 [data-baseweb="select"] > div {{
-    background:{card}!important; color:{tx1}!important;
-    border-color:{brd}!important; border-radius:10px!important;
+    background:{t.CARD}!important; color:{t.TX1}!important;
+    border-color:{t.BRD}!important; border-radius:10px!important;
 }}
 [data-baseweb="popover"] [data-baseweb="menu"] {{
-    background:{card}!important; border:1px solid {brd}!important;
+    background:{t.CARD}!important; border:1px solid {t.BRD}!important;
 }}
 
 /* ═══ Tables & DataFrames ═══ */
 [data-testid="stDataFrame"] {{
-    background:{card}; border-radius:14px; border:1px solid {brd};
+    background:{t.CARD}; border-radius:14px; border:1px solid {t.BRD};
     overflow:hidden;
 }}
 .stExpander {{
-    background:{card}!important; border:1px solid {brd}!important;
+    background:{t.CARD}!important; border:1px solid {t.BRD}!important;
     border-radius:14px!important;
 }}
-.stExpander > div {{ color:{tx1}!important; }}
+.stExpander > div {{ color:{t.TX1}!important; }}
 
 /* ═══ Alerts ═══ */
 [data-testid="stAlert"] {{
-    background:{card}!important; color:{tx1}!important;
-    border:1px solid {brd}!important; border-radius:12px!important;
+    background:{t.CARD}!important; color:{t.TX1}!important;
+    border:1px solid {t.BRD}!important; border-radius:12px!important;
 }}
 
 /* ═══ Plotly ═══ */
@@ -191,9 +176,9 @@ p,span,div,label,li {{ color:{tx1}; }}
 
 /* ═══ Scrollbar ═══ */
 ::-webkit-scrollbar {{ width:6px; }}
-::-webkit-scrollbar-track {{ background:{bg}; }}
-::-webkit-scrollbar-thumb {{ background:{tx3}; border-radius:3px; }}
-::-webkit-scrollbar-thumb:hover {{ background:{tx2}; }}
+::-webkit-scrollbar-track {{ background:{t.BG}; }}
+::-webkit-scrollbar-thumb {{ background:{t.TX3}; border-radius:3px; }}
+::-webkit-scrollbar-thumb:hover {{ background:{t.TX2}; }}
 
 /* ══════════════════════════════════════════════════════════════
    CUSTOM COMPONENTS
@@ -201,46 +186,46 @@ p,span,div,label,li {{ color:{tx1}; }}
 
 /* ─── Nav Cards ─── */
 .nav-card {{
-    background:{card}; border:1px solid {brd}; border-radius:18px;
+    background:{t.CARD}; border:1px solid {t.BRD}; border-radius:18px;
     padding:1.8rem; margin:.5rem 0; height:100%;
     transition:all .3s cubic-bezier(.4,0,.2,1);
-    box-shadow:0 4px 20px {shd}; cursor:pointer;
+    box-shadow:0 4px 20px {t.SHD}; cursor:pointer;
     position:relative; overflow:hidden;
 }}
 .nav-card::after {{
     content:'';position:absolute;bottom:0;left:50%;
-    width:0;height:3px;background:{acc};
+    width:0;height:3px;background:{t.ACC};
     transition:all .3s ease;transform:translateX(-50%);
 }}
 .nav-card:hover {{
     transform:translateY(-5px);
-    box-shadow:0 12px 35px {shd},0 0 25px rgba(0,230,138,.08);
-    border-color:rgba(0,230,138,.2);
+    box-shadow:0 12px 35px {t.SHD},0 0 25px {_rgba(t.GREEN, 0.08)};
+    border-color:{_rgba(t.GREEN, 0.2)};
 }}
 .nav-card:hover::after {{ width:60%; }}
-.nav-card h3 {{ color:{tx1}; margin-top:0; font-weight:700; font-size:1.1rem; }}
+.nav-card h3 {{ color:{t.TX1}; margin-top:0; font-weight:700; font-size:1.1rem; }}
 .nav-card h4 {{
-    color:{acc}; font-size:.8rem; font-weight:700;
+    color:{t.ACC}; font-size:.8rem; font-weight:700;
     margin-bottom:.8rem; text-transform:uppercase; letter-spacing:1px;
 }}
-.nav-card p {{ color:{tx2}; line-height:1.6; font-size:.88rem; }}
+.nav-card p {{ color:{t.TX2}; line-height:1.6; font-size:.88rem; }}
 
 /* ─── Stepper ─── */
 .stepper {{
     display:flex; align-items:center; justify-content:center;
     padding:.8rem 1.5rem; margin-bottom:1.5rem;
-    background:{card}; border-radius:14px;
-    border:1px solid {brd}; box-shadow:0 4px 15px {shd};
+    background:{t.CARD}; border-radius:14px;
+    border:1px solid {t.BRD}; box-shadow:0 4px 15px {t.SHD};
 }}
 .stepper-step {{
     display:flex; align-items:center; gap:.4rem;
     padding:.5rem 1rem; border-radius:999px;
-    font-weight:600; font-size:.82rem; color:{tx3};
+    font-weight:600; font-size:.82rem; color:{t.TX3};
     transition:all .2s ease;
 }}
-.stepper-step.active {{ background:{acc}; color:#0B0B0F; }}
-.stepper-step.completed {{ color:{acc}; }}
-.stepper-arrow {{ color:{tx3}; margin:0 .4rem; font-size:1.1rem; }}
+.stepper-step.active {{ background:{t.ACC}; color:{t.BG}; }}
+.stepper-step.completed {{ color:{t.GREEN}; }}
+.stepper-arrow {{ color:{t.TX3}; margin:0 .4rem; font-size:1.1rem; }}
 
 /* ─── Flow Diagram ─── */
 .flow-diagram {{
@@ -248,61 +233,61 @@ p,span,div,label,li {{ color:{tx1}; }}
     gap:1rem; padding:1.5rem; margin:1rem 0;
 }}
 .flow-node {{
-    background:{card}; border:1px solid {brd}; border-radius:14px;
+    background:{t.CARD}; border:1px solid {t.BRD}; border-radius:14px;
     padding:1.2rem 1.8rem; text-align:center;
-    font-weight:600; color:{tx1}; box-shadow:0 2px 10px {shd};
+    font-weight:600; color:{t.TX1}; box-shadow:0 2px 10px {t.SHD};
     transition:all .2s ease;
 }}
-.flow-node:hover {{ border-color:rgba(0,230,138,.25); transform:translateY(-2px); }}
-.flow-arrow {{ font-size:1.5rem; color:{acc}; }}
+.flow-node:hover {{ border-color:{_rgba(t.GREEN, 0.25)}; transform:translateY(-2px); }}
+.flow-arrow {{ font-size:1.5rem; color:{t.ACC}; }}
 
 /* ─── Preview Cards ─── */
 .preview-card {{
-    background:{card}; border:1px solid {brd}; border-radius:16px;
-    padding:1.5rem; margin:1rem 0; box-shadow:0 4px 15px {shd};
+    background:{t.CARD}; border:1px solid {t.BRD}; border-radius:16px;
+    padding:1.5rem; margin:1rem 0; box-shadow:0 4px 15px {t.SHD};
 }}
 .preview-card h4 {{
-    color:{acc}; margin:0 0 1rem; font-size:.82rem;
+    color:{t.ACC}; margin:0 0 1rem; font-size:.82rem;
     text-transform:uppercase; letter-spacing:1px; font-weight:700;
 }}
 .preview-row {{
     display:flex; justify-content:space-between;
-    padding:.55rem 0; border-bottom:1px solid {brd}; font-size:.9rem;
+    padding:.55rem 0; border-bottom:1px solid {t.BRD}; font-size:.9rem;
 }}
 .preview-row:last-child {{ border-bottom:none; }}
-.preview-label {{ color:{tx2}; }}
-.preview-value {{ color:{tx1}; font-weight:700; }}
+.preview-label {{ color:{t.TX2}; }}
+.preview-value {{ color:{t.TX1}; font-weight:700; }}
 
 /* ─── Alerts ─── */
 .alerta-roja {{
-    background:rgba(255,107,107,.06); border:1px solid rgba(255,107,107,.2);
-    border-left:4px solid {red}; border-radius:14px;
-    padding:1.2rem 1.5rem; color:{tx1}; font-weight:500;
+    background:{_rgba(t.RED, 0.06)}; border:1px solid {_rgba(t.RED, 0.2)};
+    border-left:4px solid {t.RED}; border-radius:14px;
+    padding:1.2rem 1.5rem; color:{t.TX1}; font-weight:500;
 }}
 .alerta-info {{
-    background:rgba(77,124,254,.06); border:1px solid rgba(77,124,254,.2);
-    border-left:4px solid {blue}; border-radius:14px;
-    padding:1.2rem 1.5rem; color:{tx1}; font-weight:500;
+    background:{_rgba(t.BLUE, 0.06)}; border:1px solid {_rgba(t.BLUE, 0.2)};
+    border-left:4px solid {t.BLUE}; border-radius:14px;
+    padding:1.2rem 1.5rem; color:{t.TX1}; font-weight:500;
 }}
 .alerta-success {{
-    background:rgba(0,230,138,.06); border:1px solid rgba(0,230,138,.2);
-    border-left:4px solid {acc}; border-radius:14px;
-    padding:1.2rem 1.5rem; color:{tx1}; font-weight:500;
+    background:{_rgba(t.GREEN, 0.06)}; border:1px solid {_rgba(t.GREEN, 0.2)};
+    border-left:4px solid {t.GREEN}; border-radius:14px;
+    padding:1.2rem 1.5rem; color:{t.TX1}; font-weight:500;
 }}
 
 /* ─── Scenario Items ─── */
 .scenario-item {{
     display:flex; justify-content:space-between; align-items:center;
     padding:.85rem 1.2rem; border-radius:12px;
-    border:1px solid {brd}; margin:.4rem 0;
-    background:{card}; cursor:pointer; transition:all .2s ease;
+    border:1px solid {t.BRD}; margin:.4rem 0;
+    background:{t.CARD}; cursor:pointer; transition:all .2s ease;
 }}
 .scenario-item:hover {{
-    border-color:rgba(0,230,138,.25); transform:translateX(4px);
-    background:{card_h};
+    border-color:{_rgba(t.GREEN, 0.25)}; transform:translateX(4px);
+    background:{t.CARD_H};
 }}
-.scenario-name {{ font-weight:700; color:{tx1}; font-size:.9rem; }}
-.scenario-date {{ font-size:.75rem; color:{tx2}; }}
+.scenario-name {{ font-weight:700; color:{t.TX1}; font-size:.9rem; }}
+.scenario-date {{ font-size:.75rem; color:{t.TX2}; }}
 
 /* ─── Soil Indicators ─── */
 .soil-indicator {{
@@ -310,30 +295,30 @@ p,span,div,label,li {{ color:{tx1}; }}
     padding:.5rem 1rem; border-radius:999px;
     font-weight:600; font-size:.85rem;
 }}
-.soil-easy {{ background:rgba(0,230,138,.12); color:{acc}; }}
-.soil-medium {{ background:rgba(255,212,59,.12); color:{yellow}; }}
-.soil-hard {{ background:rgba(255,107,107,.12); color:{red}; }}
+.soil-easy {{ background:{_rgba(t.GREEN, 0.12)}; color:{t.GREEN}; }}
+.soil-medium {{ background:{_rgba(t.YELLOW, 0.12)}; color:{t.YELLOW}; }}
+.soil-hard {{ background:{_rgba(t.RED, 0.12)}; color:{t.RED}; }}
 
 /* ─── Progress Stages ─── */
 .progress-stage {{
     display:flex; align-items:center; gap:.75rem;
     padding:.75rem 1rem; margin:.4rem 0;
-    border-radius:12px; background:{card}; border:1px solid {brd};
+    border-radius:12px; background:{t.CARD}; border:1px solid {t.BRD};
     transition:all .3s ease;
 }}
-.progress-stage.active {{ border-color:{acc}; background:rgba(0,230,138,.04); }}
-.progress-stage.done {{ border-color:{acc}; background:rgba(0,230,138,.06); }}
+.progress-stage.active {{ border-color:{t.ACC}; background:{_rgba(t.GREEN, 0.04)}; }}
+.progress-stage.done {{ border-color:{t.ACC}; background:{_rgba(t.GREEN, 0.06)}; }}
 .progress-icon {{ font-size:1.2rem; }}
-.progress-label {{ font-weight:500; color:{tx1}; font-size:.9rem; }}
+.progress-label {{ font-weight:500; color:{t.TX1}; font-size:.9rem; }}
 
 /* ─── Insight Header ─── */
 .insight-header {{
-    background:linear-gradient(135deg,rgba(0,230,138,.06) 0%,rgba(77,124,254,.06) 100%);
-    border:1px solid {brd}; border-radius:18px;
+    background:linear-gradient(135deg,{_rgba(t.GREEN, 0.06)} 0%,{_rgba(t.BLUE, 0.06)} 100%);
+    border:1px solid {t.BRD}; border-radius:18px;
     padding:1.5rem 2rem; margin-bottom:1.5rem;
 }}
-.insight-header h3 {{ color:{tx1}; margin:0 0 .5rem; }}
-.insight-header p {{ color:{tx2}; margin:0; line-height:1.6; }}
+.insight-header h3 {{ color:{t.TX1}; margin:0 0 .5rem; }}
+.insight-header p {{ color:{t.TX2}; margin:0; line-height:1.6; }}
 
 /* ─── KPI Grid (custom) ─── */
 .kpi-grid {{
@@ -341,45 +326,45 @@ p,span,div,label,li {{ color:{tx1}; }}
     gap:1rem; margin:1rem 0;
 }}
 .kpi-card {{
-    background:{card}; border:1px solid {brd}; border-radius:16px;
+    background:{t.CARD}; border:1px solid {t.BRD}; border-radius:16px;
     padding:1.5rem; position:relative; overflow:hidden;
     transition:all .25s ease;
 }}
 .kpi-card:hover {{
     transform:translateY(-3px);
-    box-shadow:0 8px 25px {shd};
+    box-shadow:0 8px 25px {t.SHD};
 }}
-.kpi-label {{ color:{tx2}; font-size:.78rem; text-transform:uppercase;
+.kpi-label {{ color:{t.TX2}; font-size:.78rem; text-transform:uppercase;
     letter-spacing:.8px; font-weight:600; margin-bottom:.4rem; }}
-.kpi-value {{ font-size:2rem; font-weight:800; color:{tx1}; line-height:1.1; }}
+.kpi-value {{ font-size:2rem; font-weight:800; color:{t.TX1}; line-height:1.1; }}
 .kpi-delta {{ font-size:.82rem; font-weight:600; margin-top:.3rem; }}
-.kpi-delta.up {{ color:{acc}; }}
-.kpi-delta.down {{ color:{red}; }}
-.kpi-delta.neutral {{ color:{tx2}; }}
-.kpi-accent-green {{ border-top:3px solid {acc}; }}
-.kpi-accent-blue {{ border-top:3px solid {blue}; }}
-.kpi-accent-yellow {{ border-top:3px solid {yellow}; }}
-.kpi-accent-red {{ border-top:3px solid {red}; }}
-.kpi-accent-purple {{ border-top:3px solid {purple}; }}
-.kpi-accent-cyan {{ border-top:3px solid {cyan}; }}
+.kpi-delta.up {{ color:{t.ACC}; }}
+.kpi-delta.down {{ color:{t.RED}; }}
+.kpi-delta.neutral {{ color:{t.TX2}; }}
+.kpi-accent-green {{ border-top:3px solid {t.GREEN}; }}
+.kpi-accent-blue {{ border-top:3px solid {t.BLUE}; }}
+.kpi-accent-yellow {{ border-top:3px solid {t.YELLOW}; }}
+.kpi-accent-red {{ border-top:3px solid {t.RED}; }}
+.kpi-accent-purple {{ border-top:3px solid {t.PURPLE}; }}
+.kpi-accent-cyan {{ border-top:3px solid {t.CYAN}; }}
 
 /* ─── Engine Banner ─── */
 .engine-banner {{
-    background:linear-gradient(135deg,rgba(0,230,138,.08),rgba(77,124,254,.08));
-    border:1px solid {brd}; border-radius:18px;
+    background:linear-gradient(135deg,{_rgba(t.GREEN, 0.08)},{_rgba(t.BLUE, 0.08)});
+    border:1px solid {t.BRD}; border-radius:18px;
     padding:2rem; margin-bottom:1.5rem; text-align:center;
 }}
 .engine-banner h2 {{ margin:0 0 .3rem; font-size:1.5rem; }}
-.engine-banner p {{ color:{tx2}; margin:0; font-size:.9rem; }}
+.engine-banner p {{ color:{t.TX2}; margin:0; font-size:.9rem; }}
 
 /* ─── Stats Badge Row ─── */
 .stats-badge {{
-    background:{card}; border:1px solid {brd};
+    background:{t.CARD}; border:1px solid {t.BRD};
     border-radius:10px; padding:.45rem 1rem;
     font-size:.82rem; display:inline-flex; gap:.4rem;
 }}
-.stats-badge-label {{ color:{tx2}; }}
-.stats-badge-value {{ color:{tx1}; font-weight:700; }}
+.stats-badge-label {{ color:{t.TX2}; }}
+.stats-badge-value {{ color:{t.TX1}; font-weight:700; }}
 
 /* ─── Section Divider ─── */
 .section-title {{
@@ -388,7 +373,7 @@ p,span,div,label,li {{ color:{tx1}; }}
 }}
 .section-title h3 {{ margin:0; font-size:1.15rem; }}
 .section-title .badge {{
-    background:rgba(0,230,138,.1); color:{acc};
+    background:{_rgba(t.GREEN, 0.1)}; color:{t.ACC};
     padding:.2rem .7rem; border-radius:6px;
     font-size:.7rem; font-weight:700; text-transform:uppercase;
 }}
@@ -409,6 +394,8 @@ p,span,div,label,li {{ color:{tx1}; }}
 st.markdown(css, unsafe_allow_html=True)
 
 # ── Logo SVG ───────────────────────────────────────────────────
+# Brand gradient stays constant per design open question (brand identity);
+# only the text fills below adapt to the active palette.
 logo_svg = f'''
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 210 60" width="190" height="56">
   <defs>
@@ -419,9 +406,9 @@ logo_svg = f'''
   </defs>
   <rect x="2" y="2" width="56" height="56" rx="14" fill="url(#g1)" opacity=".12"/>
   <rect x="7" y="7" width="46" height="46" rx="10" fill="url(#g1)"/>
-  <text x="19" y="42" font-family="Inter,Arial" font-size="28" font-weight="800" fill="#0B0B0F">E</text>
-  <text x="68" y="36" font-family="Inter,Arial" font-size="22" font-weight="800" fill="{tx1}">EMCA</text>
-  <text x="68" y="50" font-family="Inter,Arial" font-size="8.5" font-weight="600" fill="{tx2}" letter-spacing="1.5">STOCHASTIC SYSTEM</text>
+  <text x="19" y="42" font-family="Inter,Arial" font-size="28" font-weight="800" fill="{t.BG}">E</text>
+  <text x="68" y="36" font-family="Inter,Arial" font-size="22" font-weight="800" fill="{t.TX1}">EMCA</text>
+  <text x="68" y="50" font-family="Inter,Arial" font-size="8.5" font-weight="600" fill="{t.TX2}" letter-spacing="1.5">STOCHASTIC SYSTEM</text>
 </svg>
 '''
 
@@ -438,7 +425,7 @@ with st.sidebar:
     logo_path = os.path.join(assets_dir, "logo.png")
     if os.path.exists(logo_path):
         st.markdown(
-            f'<div style="padding:1rem 0 .8rem;border-bottom:1px solid {brd};margin-bottom:.8rem;text-align:center">',
+            f'<div style="padding:1rem 0 .8rem;border-bottom:1px solid {t.BRD};margin-bottom:.8rem;text-align:center">',
             unsafe_allow_html=True
         )
         st.image(logo_path, use_container_width=True)
@@ -446,8 +433,8 @@ with st.sidebar:
     else:
         st.markdown(
             f'<div style="text-align:center;padding:1rem 0 .8rem;'
-            f'border-bottom:1px solid {brd};margin-bottom:.8rem">'
-            f'<span style="font-size:1.4rem;font-weight:800;color:{acc}">🏗️ EMCA</span></div>',
+            f'border-bottom:1px solid {t.BRD};margin-bottom:.8rem">'
+            f'<span style="font-size:1.4rem;font-weight:800;color:{t.ACC}">🏗️ EMCA</span></div>',
             unsafe_allow_html=True,
         )
 
@@ -461,13 +448,13 @@ with st.sidebar:
     if escenario_activo:
         sim_icon  = "✅" if sim_ok else "⏳"
         sim_label = "Simulado" if sim_ok else "Pendiente"
-        sim_color = acc if sim_ok else yellow
+        sim_color = t.ACC if sim_ok else t.YELLOW
         st.markdown(f"""
-        <div style="background:rgba(76,139,245,0.07);border:1px solid rgba(76,139,245,0.18);
+        <div style="background:{_rgba(t.ACC, 0.07)};border:1px solid {_rgba(t.ACC, 0.18)};
             border-radius:12px;padding:.85rem 1rem;margin-bottom:.8rem">
-            <div style="font-size:.68rem;color:{tx2};text-transform:uppercase;letter-spacing:.7px;
+            <div style="font-size:.68rem;color:{t.TX2};text-transform:uppercase;letter-spacing:.7px;
                 font-weight:600;margin-bottom:.4rem">Escenario activo</div>
-            <div style="font-weight:700;color:{tx1};font-size:.88rem;margin-bottom:.35rem
+            <div style="font-weight:700;color:{t.TX1};font-size:.88rem;margin-bottom:.35rem
                 ">{escenario_activo}</div>
             <div style="font-size:.78rem;color:{sim_color};font-weight:600">
                 {sim_icon} Simulación: {sim_label}
@@ -476,12 +463,12 @@ with st.sidebar:
         """, unsafe_allow_html=True)
     else:
         st.markdown(f"""
-        <div style="background:rgba(245,166,35,0.06);border:1px solid rgba(245,166,35,0.18);
+        <div style="background:{_rgba(t.YELLOW, 0.06)};border:1px solid {_rgba(t.YELLOW, 0.18)};
             border-radius:12px;padding:.85rem 1rem;margin-bottom:.8rem">
-            <div style="font-size:.78rem;color:{yellow};font-weight:600">
+            <div style="font-size:.78rem;color:{t.YELLOW};font-weight:600">
                 ⚠️ Sin escenario activo
             </div>
-            <div style="font-size:.75rem;color:{tx2};margin-top:.2rem">
+            <div style="font-size:.75rem;color:{t.TX2};margin-top:.2rem">
                 Configurá uno en Parametrización
             </div>
         </div>

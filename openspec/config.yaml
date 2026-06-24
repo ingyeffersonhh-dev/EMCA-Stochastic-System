@@ -1,0 +1,69 @@
+# openspec/config.yaml
+# Spec-Driven Development (SDD) configuration for EMCA.
+# Bootstrapped by sdd-init on 2026-06-23.
+
+schema: spec-driven
+project: emca-stochastic-system
+artifact_store: openspec
+strict_tdd: true
+
+context: |
+  EMCA — Sistema de Información Estocástico para Planificación de Pilotes.
+  Stochastic pile (foundation) construction planning + discrete-event logistics
+  simulation. Python 3.10+ Streamlit app backed by SimPy, NumPy/SciPy, Pydantic
+  v2, Pandas, Plotly, openpyxl, loguru, SALib.
+  Architecture: layered — app/ (Streamlit pages + UI components) → core/
+  (business logic: simulation/, stochastic/, analytics/, models/, utils/)
+  with config/settings.toml (TOML config) and data/ + exports/ for scenarios.
+  Testing: pytest (34 tests, 4 files) covering engine, cálculos, KPIs,
+  distribuciones. No coverage, linter, type-checker, or formatter installed.
+
+rules:
+  proposal:
+    - Include rollback plan for risky simulation/engine changes
+    - State performance/reproducibility impact (seed, replicas, distributions)
+  specs:
+    - Use Given/When/Then for scenarios
+    - Use RFC 2119 keywords (MUST, SHALL, SHOULD, MAY)
+    - Quantify stochastic claims with percentile/comparator assertions
+  design:
+    - Keep SimPy resource modeling and stochastic sampling isolated in core/
+    - Document architecture decisions with rationale (mixer/pump contention,
+      distribution choice, sensitivity-analysis hooks via SALib)
+  tasks:
+    - Group by phase, use hierarchical numbering
+    - Keep each task completable in one focused session
+  apply:
+    tdd: true
+    test_command: "python -m pytest tests/ -v"
+    - Follow existing model_copy + Pydantic v2 patterns (see tests/test_engine.py)
+    - Preserve reproducibility: never drop seed wiring through new code paths
+  verify:
+    test_command: "python -m pytest tests/ -v"
+    build_command: "python -c \"import app, core\""  # import-smoke; no build step
+    coverage_threshold: 0  # pytest-cov not installed; disabled until added
+  archive:
+    - Warn before merging destructive deltas into openspec/specs/
+
+testing:
+  runner:
+    command: "python -m pytest tests/ -v"
+    framework: pytest
+    version: ">=8.2"
+  layers:
+    unit: { available: true, tool: pytest }
+    integration: { available: false, tool: "—" }
+    e2e: { available: false, tool: "—" }
+  coverage:
+    available: false
+    command: "—"
+    note: "pytest-cov / coverage not installed"
+  quality:
+    linter: { available: false, command: "—" }
+    type_checker: { available: false, command: "—" }
+    formatter: { available: false, command: "—" }
+  test_files:
+    - tests/test_engine.py
+    - tests/test_engine_calculos.py
+    - tests/test_kpis.py
+    - tests/test_distribuciones.py

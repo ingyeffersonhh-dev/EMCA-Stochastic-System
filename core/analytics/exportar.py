@@ -14,9 +14,8 @@ from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils.dataframe import dataframe_to_rows
 from loguru import logger
 
-from core.models.resultados import ResultadoSimulacion, EventoPilote
+from core.models.resultados import ResultadoSimulacion
 from core.analytics.kpis import resumen_estadistico, tabla_eventos_df
-from core.analytics.gantt import generar_gantt_df
 
 
 AZUL_EMCA = "1E3A5F"
