@@ -25,7 +25,7 @@
     "notas": "Escenario ligero para pruebas rápidas: pocos pilotes, cortos tiempos."
   },
   "resultado": {
-    "timestamp": "2026-06-18T23:04:15.751508",
+    "timestamp": "2026-06-24T16:01:36.266858",
     "nombre_escenario": "Prueba Rápida - Pilotes Pequeños",
     "replicas_ejecutadas": 500,
     "seed_usado": 42,
