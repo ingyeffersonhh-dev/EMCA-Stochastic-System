@@ -23,5 +23,6 @@ exports/
 
 # Agentes
 .agents/
+.atl/
 skills-lock.json
 implementation_plan.md

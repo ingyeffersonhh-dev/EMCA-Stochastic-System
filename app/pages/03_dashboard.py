@@ -146,10 +146,10 @@ sugerencias = []
 if kpis.utilizacion_mixer_pct > 85:
     sugerencias.append(("⚠️", "Alta Saturación Logística", f"Los mixers tienen una utilización del {kpis.utilizacion_mixer_pct:.0f}%. Considere agregar 1 o 2 unidades a la flota para aliviar la saturación y proteger el avance.", RED))
 elif kpis.utilizacion_mixer_pct < 45:
-    sugerencias.append(("💰", "Oportunidad de Ahorro", f"La utilización de la flota es baja ({kpis.utilizacion_mixer_pct:.0f}%). Podría reducir el número de mixers asignados para disminuir costos operativos diarios sin retrasar la obra.", ACC))
+    sugerencias.append(("🔄", "Flota Subutilizada", f"La utilización de la flota es baja ({kpis.utilizacion_mixer_pct:.0f}%). Considere redistribuir los mixers o ajustar los turnos para equilibrar la carga operativa sin afectar el cronograma.", ACC))
 
 if kpis.tiempo_espera_mixer_promedio_h > 1.5:
-    sugerencias.append(("🚚", "Sincronización de Despachos", f"El tiempo promedio de espera del mixer en obra es alto ({_formatear_tiempo(kpis.tiempo_espera_mixer_promedio_h)}). Mejorar la comunicación con la planta concretera para despachar justo al finalizar la perforación ahorrará costos de inactividad.", YEL))
+    sugerencias.append(("🚚", "Sincronización de Despachos", f"El tiempo promedio de espera del mixer en obra es alto ({_formatear_tiempo(kpis.tiempo_espera_mixer_promedio_h)}). Mejorar la coordinación con la planta concretera para despachar justo al finalizar la perforación reducirá los tiempos muertos y acelerará el ciclo total.", YEL))
 
 # Cuellos de botella
 if kpis.cuello_botella == "Transporte":
