@@ -20,14 +20,30 @@ class EventoPilote:
     pilote_id: int
     inicio_perforacion: float = 0.0
     fin_perforacion: float = 0.0
+    inicio_espera_perforadora: float = 0.0
+    fin_espera_perforadora: float = 0.0
     inicio_espera_mixer: float = 0.0
     fin_espera_mixer: float = 0.0  # Cuando el mixer queda disponible (antes del transporte)
     inicio_colado: float = 0.0
     fin_colado: float = 0.0
+    viajes_mixer: int = 1
+    """Número de viajes de mixer necesarios para colar este pilote.
+
+    Cuando `viajes_mixer == 1` el motor ejecuta un único viaje equivalente
+    al comportamiento anterior de un solo colado.
+    """
+    tiempo_total_transporte_h: float = 0.0
+    """Suma de los tiempos de transporte de todos los viajes del mixer."""
+    tiempo_total_colado_h: float = 0.0
+    """Suma de los tiempos de colado puros de todos los viajes del mixer."""
 
     @property
     def tiempo_perforacion_h(self) -> float:
         return self.fin_perforacion - self.inicio_perforacion
+
+    @property
+    def tiempo_espera_perforadora_h(self) -> float:
+        return max(0.0, self.fin_espera_perforadora - self.inicio_espera_perforadora)
 
     @property
     def tiempo_espera_mixer_h(self) -> float:
@@ -36,6 +52,12 @@ class EventoPilote:
 
     @property
     def tiempo_colado_h(self) -> float:
+        """Ventana total de colado: inicio del primer colado -> fin del último colado.
+
+        En el modelo multi-viaje esta ventana incluye los tiempos de transporte
+        intermedios entre viajes del mixer, por lo que es mayor o igual que
+        `tiempo_total_colado_h` (suma de los colados puros).
+        """
         return self.fin_colado - self.inicio_colado
 
     @property
@@ -47,9 +69,15 @@ class EventoPilote:
             "pilote_id": self.pilote_id,
             "inicio_perforacion": round(self.inicio_perforacion, 3),
             "fin_perforacion": round(self.fin_perforacion, 3),
+            "inicio_espera_perforadora": round(self.inicio_espera_perforadora, 3),
+            "fin_espera_perforadora": round(self.fin_espera_perforadora, 3),
             "inicio_colado": round(self.inicio_colado, 3),
             "fin_colado": round(self.fin_colado, 3),
+            "viajes_mixer": self.viajes_mixer,
+            "tiempo_total_transporte_h": round(self.tiempo_total_transporte_h, 3),
+            "tiempo_total_colado_h": round(self.tiempo_total_colado_h, 3),
             "tiempo_perforacion_h": round(self.tiempo_perforacion_h, 3),
+            "tiempo_espera_perforadora_h": round(self.tiempo_espera_perforadora_h, 3),
             "tiempo_espera_mixer_h": round(self.tiempo_espera_mixer_h, 3),
             "tiempo_colado_h": round(self.tiempo_colado_h, 3),
             "tiempo_ciclo_total_h": round(self.tiempo_ciclo_total_h, 3),
@@ -76,9 +104,16 @@ class KPIs:
     tiempo_espera_mixer_max_h: float = 0.0
     utilizacion_mixer_pct: float = 0.0
 
+    tiempo_espera_perforadora_promedio_h: float = 0.0
+    tiempo_espera_perforadora_max_h: float = 0.0
+    utilizacion_perforadora_pct: float = 0.0
+    viajes_mixer_promedio: float = 0.0
+    viajes_mixer_total: int = 0
+
     cuello_botella: str = "indefinido"
     alerta_logistica: bool = False
     alerta_capacidad_mixer: bool = False
+    alerta_capacidad_perforadora: bool = False
 
     # Días laborables (asume turno de 8h, 5 días/semana)
     @property
@@ -91,7 +126,8 @@ class KPIs:
 
     @staticmethod
     def from_dict(d: dict) -> KPIs:
-        return KPIs(**d)
+        valid_fields = {f.name for f in KPIs.__dataclass_fields__.values()}
+        return KPIs(**{k: v for k, v in d.items() if k in valid_fields})
 
 # ---------------------------------------------------------------------------
 # Resultado completo de la simulación
@@ -130,7 +166,13 @@ class ResultadoSimulacion:
 
         eventos_data = d.get("eventos_replica_base", [])
         # Extract only the explicit fields defined in EventoPilote
-        valid_fields = {"pilote_id", "inicio_perforacion", "fin_perforacion", "inicio_espera_mixer", "fin_espera_mixer", "inicio_colado", "fin_colado"}
+        valid_fields = {
+            "pilote_id", "inicio_perforacion", "fin_perforacion",
+            "inicio_espera_perforadora", "fin_espera_perforadora",
+            "inicio_espera_mixer", "fin_espera_mixer",
+            "inicio_colado", "fin_colado",
+            "viajes_mixer", "tiempo_total_transporte_h", "tiempo_total_colado_h",
+        }
         eventos_obj = [EventoPilote(**{k: v for k, v in ed.items() if k in valid_fields}) for ed in eventos_data]
 
         return ResultadoSimulacion(

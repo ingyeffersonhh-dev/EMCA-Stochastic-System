@@ -80,6 +80,8 @@ class ParametrosEntrada(BaseModel):
 
     # --- Logística y recursos ---
     num_mixers: int = Field(default=2, ge=1, le=10)
+    num_perforadoras: int = Field(default=2, ge=1, le=10)
+    capacidad_mixer_m3: float = Field(default=6.0, gt=0.0, le=15.0)
     distancia_proveedor_km: float = Field(default=30.0, gt=0.0, lt=200.0)
 
     # Velocidad: campos nuevos y viejos
@@ -161,6 +163,11 @@ class ParametrosEntrada(BaseModel):
         return self.volumen_pilote_m3 * self.cantidad_pilotes
 
     @property
+    def viajes_por_pilote(self) -> int:
+        import math
+        return max(1, math.ceil(self.volumen_pilote_m3 / self.capacidad_mixer_m3))
+
+    @property
     def perf_horas_media(self) -> float:
         return self.tiempo_perforacion_min_media / 60.0
 
@@ -186,7 +193,13 @@ class ParametrosEntrada(BaseModel):
 
     @property
     def dias_estimados(self) -> float:
-        t = self.tiempo_perforacion_ajustado_media + self.colado_horas_media + self.tiempo_transporte_h / self.num_mixers
+        # La perforación es la fase limitada por el número de perforadoras;
+        # colado y transporte están acotados por los mixers.
+        t = (
+            self.tiempo_perforacion_ajustado_media / self.num_perforadoras
+            + self.colado_horas_media
+            + self.tiempo_transporte_h / self.num_mixers
+        )
         return (t * self.cantidad_pilotes) / self.horas_por_dia
 
     # Alias compatibilidad

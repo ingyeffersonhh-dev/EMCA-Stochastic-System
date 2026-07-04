@@ -12,7 +12,8 @@ def params_base():
     return ParametrosEntrada(
         diametro_m=0.6, longitud_m=15.0, cantidad_pilotes=5,
         tipo_suelo=TipoSuelo.SUELO_SECO, uso_lodo_bentonitico=True,
-        num_mixers=2, distancia_proveedor_km=30.0,
+        num_mixers=2, num_perforadoras=3, capacidad_mixer_m3=6.0,
+        distancia_proveedor_km=30.0,
         velocidad_transporte_kmh_media=60.0, velocidad_transporte_kmh_std=10.0,
         tiempo_perforacion_min_media=240.0, tiempo_perforacion_min_std=48.0,
         dist_perforacion=TipoDistribucion.LOGNORMAL,

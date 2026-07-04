@@ -18,6 +18,8 @@ def params_deterministico():
         tipo_suelo=TipoSuelo.SUELO_SECO,
         uso_lodo_bentonitico=True,
         num_mixers=1,
+        num_perforadoras=3,
+        capacidad_mixer_m3=6.0,
         distancia_proveedor_km=30.0,
         velocidad_transporte_kmh_media=60.0,
         velocidad_transporte_kmh_std=0.1,
