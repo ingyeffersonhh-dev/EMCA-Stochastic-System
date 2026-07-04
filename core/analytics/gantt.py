@@ -43,6 +43,15 @@ def generar_gantt_df(
             "Duración_h": round(e.tiempo_perforacion_h, 2),
         })
 
+        if e.tiempo_espera_perforadora_h > 0.05:
+            rows.append({
+                "Pilote": label,
+                "Fase": "⛏️ Espera Perforadora",
+                "Inicio": origen + pd.Timedelta(hours=e.inicio_espera_perforadora),
+                "Fin": origen + pd.Timedelta(hours=e.fin_espera_perforadora),
+                "Duración_h": round(e.tiempo_espera_perforadora_h, 2),
+            })
+
         if e.tiempo_espera_mixer_h > 0.05:
             rows.append({
                 "Pilote": label,

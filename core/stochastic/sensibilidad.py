@@ -24,12 +24,13 @@ def definir_problema(params_base: dict) -> dict:
     Varía ±30% alrededor de los valores base del usuario.
     """
     return {
-        "num_vars": 4,
+        "num_vars": 5,
         "names": [
             "tiempo_perforacion_min_media",
             "tiempo_perforacion_min_std",
             "num_mixers",
             "distancia_proveedor_km",
+            "num_perforadoras",
         ],
         "bounds": [
             [params_base["tiempo_perforacion_min_media"] * 0.7,
@@ -40,6 +41,8 @@ def definir_problema(params_base: dict) -> dict:
              params_base["num_mixers"] + 2],
             [params_base["distancia_proveedor_km"] * 0.7,
              params_base["distancia_proveedor_km"] * 1.3],
+            [max(1, params_base.get("num_perforadoras", 2) - 1),
+             params_base.get("num_perforadoras", 2) + 2],
         ],
     }
 

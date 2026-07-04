@@ -110,6 +110,8 @@ param_labels = {
     "longitud_m":                   ("Longitud pilote", "m"),
     "cantidad_pilotes":              ("Cantidad de pilotes", "uds"),
     "num_mixers":                    ("Mixers activos", "uds"),
+    "num_perforadoras":             ("Perforadoras", "uds"),
+    "capacidad_mixer_m3":           ("Capacidad mixer", "m³"),
     "distancia_proveedor_km":       ("Distancia a planta", "km"),
     "horas_por_dia":                 ("Jornada laboral", "h/día"),
     "tiempo_perforacion_min_media": ("T. Perforación μ", "min"),
@@ -165,9 +167,12 @@ else:
         p50 = kpis.get("tiempo_proyecto_p50_h", 0) if kpis else 0
         p90 = kpis.get("tiempo_proyecto_p90_h", 0) if kpis else 0
         util = kpis.get("utilizacion_mixer_pct", 0) if kpis else 0
+        util_perf = kpis.get("utilizacion_perforadora_pct", 0) if kpis else 0
         espera = kpis.get("tiempo_espera_mixer_promedio_h", 0) if kpis else 0
+        viajes_total = kpis.get("viajes_mixer_total", 0) if kpis else 0
         cuello = kpis.get("cuello_botella", "—") if kpis else "No simulado"
         color_util = t.RED if util > 85 else t.ACC
+        color_util_perf = t.RED if util_perf > 85 else t.ACC
 
         col.markdown(textwrap.dedent(f"""
         <div style="background:{t.CARD};border:1px solid {t.BRD};border-radius:16px;padding:1.5rem">
@@ -185,6 +190,14 @@ else:
         <div style="margin-bottom:.8rem">
         <div style="color:{t.TX2};font-size:.72rem;text-transform:uppercase;letter-spacing:.8px;font-weight:600">Utilización Mixer</div>
         <div style="color:{color_util};font-size:1.4rem;font-weight:800">{util:.0f}%</div>
+        </div>
+        <div style="margin-bottom:.8rem">
+        <div style="color:{t.TX2};font-size:.72rem;text-transform:uppercase;letter-spacing:.8px;font-weight:600">Utilización Perforadora</div>
+        <div style="color:{color_util_perf};font-size:1.4rem;font-weight:800">{util_perf:.0f}%</div>
+        </div>
+        <div style="margin-bottom:.8rem">
+        <div style="color:{t.TX2};font-size:.72rem;text-transform:uppercase;letter-spacing:.8px;font-weight:600">Viajes Mixer Total</div>
+        <div style="color:{t.TX1};font-size:1.4rem;font-weight:800">{viajes_total}</div>
         </div>
         <div>
         <div style="color:{t.TX2};font-size:.72rem;text-transform:uppercase;letter-spacing:.8px;font-weight:600">Cuello de botella</div>
@@ -224,7 +237,7 @@ else:
 
     # ── Radar chart
     st.markdown(f"<div style='font-weight:600;color:{t.TX1};margin:.5rem 0'>Perfil de Eficiencia (Radar)</div>", unsafe_allow_html=True)
-    cats = ["Velocidad (P50↓)", "Confiabilidad (P90-P50↓)", "Eficiencia Mixer↑", "Sin Esperas↑"]
+    cats = ["Velocidad (P50↓)", "Confiabilidad (P90-P50↓)", "Eficiencia Mixer↑", "Sin Esperas↑", "Sin Espera Perforadora↑"]
 
     def normalizar(val, mn, mx, invertir=False):
         if mx == mn:
@@ -236,6 +249,7 @@ else:
     p90_vals = [get_kpi_val(n, "tiempo_proyecto_p90_h") for n in nombres_list]
     util_vals = [get_kpi_val(n, "utilizacion_mixer_pct") for n in nombres_list]
     esp_vals  = [get_kpi_val(n, "tiempo_espera_mixer_promedio_h") for n in nombres_list]
+    esp_perf_vals = [get_kpi_val(n, "tiempo_espera_perforadora_promedio_h") for n in nombres_list]
     spread_vals = [p90_vals[i] - p50_vals[i] for i in range(len(nombres_list))]
 
     fig_rad = go.Figure()
@@ -245,6 +259,7 @@ else:
             normalizar(spread_vals[i], min(spread_vals), max(spread_vals), invertir=True),
             normalizar(util_vals[i], min(util_vals), max(util_vals)),
             normalizar(esp_vals[i], min(esp_vals), max(esp_vals), invertir=True),
+            normalizar(esp_perf_vals[i], min(esp_perf_vals), max(esp_perf_vals), invertir=True),
         ]
         r_vals.append(r_vals[0])
         fig_rad.add_trace(go.Scatterpolar(

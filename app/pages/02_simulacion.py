@@ -56,6 +56,10 @@ with st.expander("📋 Resumen del escenario configurado", expanded=True):
             <div class="kpi-value" style="font-size:1.4rem">{params.num_mixers}</div>
         </div>
         <div class="kpi-card" style="padding:1rem">
+            <div class="kpi-label">Perforadoras</div>
+            <div class="kpi-value" style="font-size:1.4rem">{params.num_perforadoras}</div>
+        </div>
+        <div class="kpi-card" style="padding:1rem">
             <div class="kpi-label">Distancia</div>
             <div class="kpi-value" style="font-size:1.4rem">{params.distancia_proveedor_km} km</div>
         </div>
@@ -75,7 +79,13 @@ horas_dia = params.horas_por_dia
 t_transporte = params.tiempo_transporte_h
 t_perf_ajustado = params.tiempo_perforacion_ajustado_media
 t_colado = params.tiempo_colado_h_media
-t_estimado_pilote = t_perf_ajustado + t_colado + t_transporte / params.num_mixers
+# Estimación teórica aproximada: incluye multi-viaje del mixer.
+# La serialización real de la perforadora se resuelve en la simulación SimPy.
+t_estimado_pilote = (
+    t_perf_ajustado
+    + t_colado
+    + (t_transporte * params.viajes_por_pilote) / params.num_mixers
+)
 t_total_estimado = t_estimado_pilote * params.cantidad_pilotes
 dias_estimados = params.dias_estimados
 
@@ -205,7 +215,8 @@ if ejecutar:
         st.markdown('<div class="section-title" style="margin-top:2rem"><h3>📊 Resultados Clave</h3></div>', unsafe_allow_html=True)
         
         util_color = "kpi-accent-purple" if k.utilizacion_mixer_pct <= 85 else "kpi-accent-red"
-        
+        util_perf_color = "kpi-accent-purple" if k.utilizacion_perforadora_pct <= 85 else "kpi-accent-red"
+
         st.markdown(f"""
         <div class="kpi-grid">
             <div class="kpi-card kpi-accent-green">
@@ -218,14 +229,15 @@ if ejecutar:
                 <div class="kpi-value">{k.tiempo_proyecto_p90_h:.1f} h</div>
                 <div style="color:{t.TX2};font-size:0.8rem;margin-top:0.2rem">{k.tiempo_proyecto_p90_h/horas_dia:.1f} días</div>
             </div>
-            <div class="kpi-card">
-                <div class="kpi-label">Cuello de botella</div>
-                <div class="kpi-value" style="font-size:1.2rem;margin-top:0.4rem">{k.cuello_botella}</div>
-            </div>
             <div class="kpi-card {util_color}">
                 <div class="kpi-label">Utilización Mixer</div>
                 <div class="kpi-value">{k.utilizacion_mixer_pct:.0f}%</div>
                 <div style="color:{t.TX2};font-size:0.8rem;margin-top:0.2rem">{'⚠️ Alta' if k.utilizacion_mixer_pct > 85 else '✅ Normal'}</div>
+            </div>
+            <div class="kpi-card {util_perf_color}">
+                <div class="kpi-label">Utilización Perforadora</div>
+                <div class="kpi-value">{k.utilizacion_perforadora_pct:.0f}%</div>
+                <div style="color:{t.TX2};font-size:0.8rem;margin-top:0.2rem">{'⚠️ Alta' if k.utilizacion_perforadora_pct > 85 else '✅ Normal'}</div>
             </div>
         </div>
         """, unsafe_allow_html=True)
@@ -236,6 +248,15 @@ if ejecutar:
                 🚨 <strong>ALERTA LOGÍSTICA</strong>: Tiempo promedio de espera del mixer = 
                 <strong>{k.tiempo_espera_mixer_promedio_h:.2f} h</strong> (umbral: 2.0 h). 
                 Considere aumentar la flota o reducir la distancia al proveedor.
+            </div>
+            """, unsafe_allow_html=True)
+
+        if k.alerta_capacidad_perforadora:
+            st.markdown(f"""
+            <div class="alerta-roja" style="margin-top:1.5rem">
+                ⛏️ <strong>ALERTA PERFORACIÓN</strong>: Utilización de perforadora = 
+                <strong>{k.utilizacion_perforadora_pct:.0f}%</strong>. 
+                Considere agregar más equipos de perforación para evitar serialización.
             </div>
             """, unsafe_allow_html=True)
 

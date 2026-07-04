@@ -117,11 +117,17 @@ def exportar_excel(
             "pilote_id": "Pilote #",
             "inicio_perforacion": "Inicio Perf. (h)",
             "fin_perforacion": "Fin Perf. (h)",
+            "inicio_espera_perforadora": "Inicio Espera Perforadora (h)",
+            "fin_espera_perforadora": "Fin Espera Perforadora (h)",
             "inicio_colado": "Inicio Colado (h)",
             "fin_colado": "Fin Colado (h)",
+            "viajes_mixer": "Viajes Mixer",
             "tiempo_perforacion_h": "T. Perforación (h)",
+            "tiempo_espera_perforadora_h": "Espera Perforadora (h)",
             "tiempo_espera_mixer_h": "T. Espera Mixer (h)",
             "tiempo_colado_h": "T. Colado (h)",
+            "tiempo_total_transporte_h": "T. Transporte Total (h)",
+            "tiempo_total_colado_h": "T. Colado Total (h)",
             "tiempo_ciclo_total_h": "T. Ciclo Total (h)",
         }
         df_export = df_eventos.rename(columns=cols_rename)

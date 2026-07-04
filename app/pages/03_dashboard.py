@@ -87,7 +87,7 @@ with col_export:
 h_dia = params.horas_por_dia if params and hasattr(params, 'horas_por_dia') else 8.0
 
 st.markdown(f"""
-<div class="kpi-grid" style="grid-template-columns:repeat(4,1fr)">
+<div class="kpi-grid" style="grid-template-columns:repeat(5,1fr)">
     <div class="kpi-card kpi-accent-green">
         <div class="kpi-label">Duración P10</div>
         <div class="kpi-value" style="font-size:1.6rem">{_formatear_tiempo(kpis.tiempo_proyecto_p10_h)}</div>
@@ -110,6 +110,13 @@ st.markdown(f"""
             {'⚠️ Saturado' if kpis.utilizacion_mixer_pct > 85 else '✓ Normal'}
         </div>
     </div>
+    <div class="kpi-card kpi-accent-purple">
+        <div class="kpi-label">Utilización Perforadora</div>
+        <div class="kpi-value">{kpis.utilizacion_perforadora_pct:.0f}%</div>
+        <div class="kpi-delta {'down' if kpis.utilizacion_perforadora_pct > 85 else 'up'}">
+            {'⚠️ Saturado' if kpis.utilizacion_perforadora_pct > 85 else '✓ Normal'}
+        </div>
+    </div>
 </div>
 """, unsafe_allow_html=True)
 
@@ -119,6 +126,15 @@ if kpis.alerta_logistica:
         🚨 <strong>ALERTA LOGÍSTICA</strong>: Espera mixer promedio =
         <strong>{_formatear_tiempo(kpis.tiempo_espera_mixer_promedio_h)}</strong>.
         Considere aumentar la flota o reducir la distancia.
+    </div>
+    """, unsafe_allow_html=True)
+
+if kpis.alerta_capacidad_perforadora:
+    st.markdown(f"""
+    <div class="alerta-roja">
+        ⛏️ <strong>ALERTA PERFORACIÓN</strong>: Utilización de perforadora =
+        <strong>{kpis.utilizacion_perforadora_pct:.0f}%</strong>.
+        Considere agregar más equipos de perforación para evitar serialización.
     </div>
     """, unsafe_allow_html=True)
 
@@ -134,6 +150,12 @@ if kpis.utilizacion_mixer_pct > 85:
     sugerencias.append(("⚠️", "Alta Saturación Logística", f"Los mixers tienen una utilización del {kpis.utilizacion_mixer_pct:.0f}%. Considere agregar 1 o 2 unidades a la flota para aliviar la saturación y proteger el avance.", t.RED))
 elif kpis.utilizacion_mixer_pct < 45:
     sugerencias.append(("🔄", "Flota Subutilizada", f"La utilización de la flota es baja ({kpis.utilizacion_mixer_pct:.0f}%). Considere redistribuir los mixers o ajustar los turnos para equilibrar la carga operativa sin afectar el cronograma.", t.ACC))
+
+# Perforadora
+if kpis.utilizacion_perforadora_pct > 85:
+    sugerencias.append(("⛏️", "Alta Saturación de Perforadora", f"La perforadora está al {kpis.utilizacion_perforadora_pct:.0f}%. Considerá agregar 1 perforadora más para reducir la serialización de la fase de perforación.", t.RED))
+elif kpis.utilizacion_perforadora_pct < 45:
+    sugerencias.append(("🔄", "Perforadora Subutilizada", f"La utilización de la perforadora es baja ({kpis.utilizacion_perforadora_pct:.0f}%). Podés redistribuir trabajos o ajustar turnos para equilibrar la carga operativa.", t.ACC))
 
 if kpis.tiempo_espera_mixer_promedio_h > 1.5:
     sugerencias.append(("🚚", "Sincronización de Despachos", f"El tiempo promedio de espera del mixer en obra es alto ({_formatear_tiempo(kpis.tiempo_espera_mixer_promedio_h)}). Mejorar la coordinación con la planta concretera para despachar justo al finalizar la perforación reducirá los tiempos muertos y acelerará el ciclo total.", t.YELLOW))
@@ -232,6 +254,7 @@ gantt_df = generar_gantt_df(resultado.eventos_replica_base, hora_inicio_proyecto
 if not gantt_df.empty:
     COLOR_MAP = {
         "🔩 Perforación": t.BLUE,
+        "⛏️ Espera Perforadora": t.PURPLE,
         "⏳ Espera Mixer": t.RED,
         "🪣 Colado": t.ACC,
     }
@@ -280,17 +303,20 @@ with col_r:
     tc = sum(e.tiempo_colado_h for e in ev)
     te = sum(e.tiempo_espera_mixer_h for e in ev)
     tt = tp + tc + te
+    # Eficiencia de perforadora: 100% cuando no hay espera; tiende a 0 con esperas largas.
+    espera_perf = kpis.tiempo_espera_perforadora_promedio_h
+    sin_espera_perf = max(0, 100 - espera_perf * 10)
     vals = [
         (tp / tt * 100) if tt > 0 else 0,
         (tc / tt * 100) if tt > 0 else 0,
-        max(0, 100 - (te / tt * 100)) if tt > 0 else 0,
         kpis.utilizacion_mixer_pct,
+        sin_espera_perf,
         max(0, 100 - kpis.tiempo_proyecto_std_h / max(kpis.tiempo_proyecto_p50_h, .01) * 100),
     ]
     fig_radar = go.Figure()
     fig_radar.add_trace(go.Scatterpolar(
         r=vals,
-        theta=["Perforación", "Colado", "Logística", "Mixer", "Predictibilidad"],
+        theta=["Perforación", "Colado", "Mixer", "Sin Espera Perforadora↑", "Predictibilidad"],
         fill="toself", fillcolor=_rgba(t.GREEN, 0.1),
         line=dict(color=t.ACC, width=2),
         marker=dict(size=6, color=t.ACC),
@@ -342,22 +368,23 @@ df_tabla = tabla_eventos_df(resultado.eventos_replica_base)
 if not df_tabla.empty:
     cf1, cf2, cf3 = st.columns(3)
     with cf1:
-        mn_e, mx_e = float(df_tabla["tiempo_espera_mixer_h"].min()), float(df_tabla["tiempo_espera_mixer_h"].max())
-        filtro_e = st.slider("Filtrar espera mixer (h)", mn_e, mx_e, (mn_e, mx_e), step=0.1)
+        mn_ep, mx_ep = float(df_tabla["tiempo_espera_perforadora_h"].min()), float(df_tabla["tiempo_espera_perforadora_h"].max())
+        filtro_ep = st.slider("Filtrar espera perforadora (h)", mn_ep, mx_ep, (mn_ep, mx_ep), step=0.1)
     with cf2:
-        mn_c, mx_c = float(df_tabla["tiempo_ciclo_total_h"].min()), float(df_tabla["tiempo_ciclo_total_h"].max())
-        filtro_c = st.slider("Filtrar ciclo total (h)", mn_c, mx_c, (mn_c, mx_c), step=0.1)
+        mn_em, mx_em = float(df_tabla["tiempo_espera_mixer_h"].min()), float(df_tabla["tiempo_espera_mixer_h"].max())
+        filtro_em = st.slider("Filtrar espera mixer (h)", mn_em, mx_em, (mn_em, mx_em), step=0.1)
     with cf3:
-        ordenar = st.selectbox("Ordenar por", ["Pilote ID", "Perforación", "Espera Mixer", "Colado", "Ciclo Total"])
+        ordenar = st.selectbox("Ordenar por", ["Pilote ID", "Perforación", "Espera Perforadora", "Espera Mixer", "Colado", "Ciclo Total"])
 
     df_f = df_tabla[
-        (df_tabla["tiempo_espera_mixer_h"] >= filtro_e[0]) &
-        (df_tabla["tiempo_espera_mixer_h"] <= filtro_e[1]) &
-        (df_tabla["tiempo_ciclo_total_h"] >= filtro_c[0]) &
-        (df_tabla["tiempo_ciclo_total_h"] <= filtro_c[1])
+        (df_tabla["tiempo_espera_perforadora_h"] >= filtro_ep[0]) &
+        (df_tabla["tiempo_espera_perforadora_h"] <= filtro_ep[1]) &
+        (df_tabla["tiempo_espera_mixer_h"] >= filtro_em[0]) &
+        (df_tabla["tiempo_espera_mixer_h"] <= filtro_em[1])
     ].copy()
 
     om = {"Pilote ID": "pilote_id", "Perforación": "tiempo_perforacion_h",
+          "Espera Perforadora": "tiempo_espera_perforadora_h",
           "Espera Mixer": "tiempo_espera_mixer_h", "Colado": "fin_colado",
           "Ciclo Total": "tiempo_ciclo_total_h"}
     df_f = df_f.sort_values(by=om[ordenar])
@@ -366,11 +393,12 @@ if not df_tabla.empty:
     st.dataframe(
         df_f.rename(columns={
             "pilote_id": "Pilote", "tiempo_perforacion_h": "Perf. (h)",
+            "tiempo_espera_perforadora_h": "Espera Perforadora (h)",
             "tiempo_espera_mixer_h": "Espera Mixer (h)",
             "tiempo_colado_h": "Colado (h)", "tiempo_ciclo_total_h": "Ciclo Total (h)",
-        })[["Pilote", "Perf. (h)", "Espera Mixer (h)", "Colado (h)", "Ciclo Total (h)"]
-        ].style.background_gradient(subset=["Espera Mixer (h)"], cmap="RdYlGn_r")
-        .format("{:.2f}", subset=["Perf. (h)", "Espera Mixer (h)", "Colado (h)", "Ciclo Total (h)"]),
+        })[["Pilote", "Perf. (h)", "Espera Perforadora (h)", "Espera Mixer (h)", "Colado (h)", "Ciclo Total (h)"]
+        ].style.background_gradient(subset=["Espera Perforadora (h)", "Espera Mixer (h)"], cmap="RdYlGn_r")
+        .format("{:.2f}", subset=["Perf. (h)", "Espera Perforadora (h)", "Espera Mixer (h)", "Colado (h)", "Ciclo Total (h)"]),
         use_container_width=True,
     )
 
@@ -395,20 +423,25 @@ if len(archivos) >= 2:
         with open(os.path.join(scenarios_dir, esc2), encoding="utf-8") as f: d2 = json.load(f)
 
         for col, d in [(cc1, d1), (cc2, d2)]:
+            # Scenarios are saved as {"parametros": {...}, "resultado": {...}}.
+            # Fall back to root dict for old-format scenarios without the wrapper.
+            p = d.get("parametros", d)
             with col:
                 st.markdown(f"""
                 <div class="preview-card">
-                    <h4>📋 {d.get('nombre_escenario', '?')}</h4>
+                    <h4>📋 {p.get('nombre_escenario', '?')}</h4>
                     <div class="preview-row"><span class="preview-label">Pilotes</span>
-                        <span class="preview-value">{d.get('cantidad_pilotes','?')}</span></div>
+                        <span class="preview-value">{p.get('cantidad_pilotes','?')}</span></div>
                     <div class="preview-row"><span class="preview-label">Mixers</span>
-                        <span class="preview-value">{d.get('num_mixers','?')}</span></div>
+                        <span class="preview-value">{p.get('num_mixers','?')}</span></div>
+                    <div class="preview-row"><span class="preview-label">Perforadoras</span>
+                        <span class="preview-value">{p.get('num_perforadoras','?')}</span></div>
                     <div class="preview-row"><span class="preview-label">Distancia (km)</span>
-                        <span class="preview-value">{d.get('distancia_proveedor_km','?')}</span></div>
+                        <span class="preview-value">{p.get('distancia_proveedor_km','?')}</span></div>
                     <div class="preview-row"><span class="preview-label">T. Perforación</span>
-                        <span class="preview-value">{d.get('tiempo_perforacion_min_media','?')} min</span></div>
+                        <span class="preview-value">{p.get('tiempo_perforacion_min_media','?')} min</span></div>
                     <div class="preview-row"><span class="preview-label">T. Colado</span>
-                        <span class="preview-value">{d.get('tiempo_colado_min_media','?')} min</span></div>
+                        <span class="preview-value">{p.get('tiempo_colado_min_media','?')} min</span></div>
                 </div>
                 """, unsafe_allow_html=True)
     elif esc1 == esc2:

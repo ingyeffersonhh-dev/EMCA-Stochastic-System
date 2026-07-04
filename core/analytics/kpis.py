@@ -35,10 +35,18 @@ def resumen_estadistico(resultado: ResultadoSimulacion) -> Dict[str, Any]:
         "Espera mixer promedio (h)": round(k.tiempo_espera_mixer_promedio_h, 2),
         "Espera mixer máxima (h)": round(k.tiempo_espera_mixer_max_h, 2),
         "Utilización mixer (%)": round(k.utilizacion_mixer_pct, 1),
+        # Perforadora
+        "Espera perforadora promedio (h)": round(k.tiempo_espera_perforadora_promedio_h, 2),
+        "Espera perforadora máxima (h)": round(k.tiempo_espera_perforadora_max_h, 2),
+        "Utilización perforadora (%)": round(k.utilizacion_perforadora_pct, 1),
+        # Viajes de mixer
+        "Viajes mixer promedio": round(k.viajes_mixer_promedio, 1),
+        "Viajes mixer total": k.viajes_mixer_total,
         # Diagnóstico
         "Cuello de botella": k.cuello_botella,
         "Alerta logística": "🔴 SÍ" if k.alerta_logistica else "🟢 NO",
         "Alerta capacidad mixer": "🔴 SÍ" if k.alerta_capacidad_mixer else "🟢 NO",
+        "Alerta capacidad perforadora": "🔴 SÍ" if k.alerta_capacidad_perforadora else "🟢 NO",
     }
 
 

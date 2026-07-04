@@ -212,12 +212,28 @@ with st.form("form_parametros", clear_on_submit=False):
             )
 
         with col_right:
+            st.markdown(f'<p style="font-weight:600;font-size:.9rem;color:{t.TX1};margin-bottom:.5rem">⛏️ Perforadoras disponibles</p>', unsafe_allow_html=True)
+            num_perforadoras = st.slider(
+                "Perforadoras activas",
+                min_value=1, max_value=10,
+                value=int(prev.get("num_perforadoras", 2)),
+                help="Número de equipos de perforación disponibles simultáneamente. Más perforadoras reducen la serialización de la fase de perforación."
+            )
+
             st.markdown(f'<p style="font-weight:600;font-size:.9rem;color:{t.TX1};margin-bottom:.5rem">🚛 Flota de mixers</p>', unsafe_allow_html=True)
             num_mixers = st.slider(
                 "Mixers activos",
                 min_value=1, max_value=10,
                 value=int(prev.get("num_mixers", 2)),
                 help="Número de camiones mixer disponibles simultáneamente para el suministro de hormigón"
+            )
+
+            capacidad_mixer = st.number_input(
+                "Capacidad mixer (m³)",
+                min_value=1.0, max_value=15.0,
+                value=float(prev.get("capacidad_mixer_m3", 6.0)),
+                step=0.5,
+                help="Volumen útil de hormigón que transporta cada mixer"
             )
 
             distancia = st.slider(
@@ -256,9 +272,20 @@ with st.form("form_parametros", clear_on_submit=False):
 
         t_transp = (distancia * 2) / vel_media
         viajes_dia = horas_dia / t_transp if t_transp > 0 else 0
+        viajes_por_pilote = math.ceil(vol_unit / capacidad_mixer) if capacidad_mixer > 0 else 1
+        viajes_totales = viajes_por_pilote * cantidad
 
-        color_mixers = t.GREEN if num_mixers >= math.ceil(t_transp) else t.YELLOW
-        msg_mixers = "✅ Flota suficiente" if num_mixers >= math.ceil(t_transp) else "⚠️ Flota puede ser insuficiente"
+        mixer_ok = num_mixers >= math.ceil(t_transp)
+        perforadora_ok = num_perforadoras > 1 or cantidad <= num_perforadoras
+        color_estado = t.GREEN if (mixer_ok and perforadora_ok) else t.YELLOW
+        if not mixer_ok and not perforadora_ok:
+            msg_estado = "⚠️ Posibles cuellos de botella en mixer y perforación"
+        elif not mixer_ok:
+            msg_estado = "⚠️ Flota de mixers puede ser insuficiente"
+        elif not perforadora_ok:
+            msg_estado = "⚠️ Posible cuello de botella en perforación"
+        else:
+            msg_estado = "✅ Recursos suficientes"
 
         st.markdown(f"""
         <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:.75rem;margin:1rem 0 0.5rem">
@@ -274,16 +301,44 @@ with st.form("form_parametros", clear_on_submit=False):
             </div>
             <div style="background:{_rgba(t.ACC, 0.08)};border:1px solid {_rgba(t.ACC, 0.2)};
                 border-radius:12px;padding:1rem;text-align:center">
-                <div style="color:{t.TX2};font-size:.72rem;text-transform:uppercase;letter-spacing:.8px;font-weight:600">Viajes/día (flota)</div>
-                <div style="color:{t.TX1};font-size:1.2rem;font-weight:800;margin-top:.3rem">{viajes_dia*num_mixers:.1f}</div>
+                <div style="color:{t.TX2};font-size:.72rem;text-transform:uppercase;letter-spacing:.8px;font-weight:600">Viajes por pilote</div>
+                <div style="color:{t.TX1};font-size:1.2rem;font-weight:800;margin-top:.3rem">{viajes_por_pilote}</div>
             </div>
             <div style="background:{_rgba(t.ACC, 0.06)};border:1px solid {_rgba(t.ACC, 0.15)};
                 border-radius:12px;padding:1rem;text-align:center">
                 <div style="color:{t.TX2};font-size:.72rem;text-transform:uppercase;letter-spacing:.8px;font-weight:600">Estado flota</div>
-                <div style="color:{color_mixers};font-size:.9rem;font-weight:700;margin-top:.5rem">{msg_mixers}</div>
+                <div style="color:{color_estado};font-size:.9rem;font-weight:700;margin-top:.5rem">{msg_estado}</div>
             </div>
         </div>
         """, unsafe_allow_html=True)
+
+        st.markdown(f"""
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.75rem;margin:.5rem 0 0.5rem">
+            <div style="background:{_rgba(t.CYAN, 0.08)};border:1px solid {_rgba(t.CYAN, 0.2)};
+                border-radius:12px;padding:1rem;text-align:center">
+                <div style="color:{t.TX2};font-size:.72rem;text-transform:uppercase;letter-spacing:.8px;font-weight:600">Viajes totales estimados</div>
+                <div style="color:{t.TX1};font-size:1.2rem;font-weight:800;margin-top:.3rem">{viajes_totales}</div>
+            </div>
+            <div style="background:{_rgba(t.ACC, 0.08)};border:1px solid {_rgba(t.ACC, 0.2)};
+                border-radius:12px;padding:1rem;text-align:center">
+                <div style="color:{t.TX2};font-size:.72rem;text-transform:uppercase;letter-spacing:.8px;font-weight:600">Viajes/día (flota)</div>
+                <div style="color:{t.TX1};font-size:1.2rem;font-weight:800;margin-top:.3rem">{viajes_dia*num_mixers:.1f}</div>
+            </div>
+            <div style="background:{_rgba(t.PURPLE, 0.08)};border:1px solid {_rgba(t.PURPLE, 0.2)};
+                border-radius:12px;padding:1rem;text-align:center">
+                <div style="color:{t.TX2};font-size:.72rem;text-transform:uppercase;letter-spacing:.8px;font-weight:600">Capacidad mixer</div>
+                <div style="color:{t.TX1};font-size:1.2rem;font-weight:800;margin-top:.3rem">{capacidad_mixer:.1f} m³</div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        if viajes_por_pilote > 10:
+            st.markdown(f"""
+            <div class="alerta-roja" style="margin-top:1rem">
+                ⚠️ <strong>Pilote de gran volumen:</strong> se requieren <strong>{viajes_por_pilote} viajes</strong> por pilote.
+                Considerá aumentar la capacidad del mixer o evaluar el suministro con bomba de hormigón.
+            </div>
+            """, unsafe_allow_html=True)
 
     with tab_estoc:
         st.markdown(f"""
@@ -400,7 +455,9 @@ if submitted:
         params = ParametrosEntrada(
             diametro_m=diametro, longitud_m=longitud, cantidad_pilotes=int(cantidad),
             tipo_suelo=tipo_suelo, uso_lodo_bentonitico=uso_lodo,
-            num_mixers=int(num_mixers), distancia_proveedor_km=distancia,
+            num_mixers=int(num_mixers), num_perforadoras=int(num_perforadoras),
+            capacidad_mixer_m3=float(capacidad_mixer),
+            distancia_proveedor_km=distancia,
             velocidad_transporte_kmh_media=vel_media, velocidad_transporte_kmh_std=vel_std,
             tiempo_perforacion_min_media=float(t_perf_media), tiempo_perforacion_min_std=float(t_perf_std),
             dist_perforacion=TipoDistribucion(dist_perf),
