@@ -50,53 +50,72 @@ with st.sidebar:
     archivos = [f for f in os.listdir(scenarios_dir) if f.endswith(".json")]
 
     if archivos:
-        default_idx = 0
-        if "datos_formulario" in st.session_state:
-            nombre_esc_prev = st.session_state["datos_formulario"].get("nombre_escenario", "")
-            nombre_file_prev = f"{nombre_esc_prev.replace(' ', '_')}.json"
-            if nombre_file_prev in archivos:
-                default_idx = archivos.index(nombre_file_prev) + 1
+        st.markdown(f"""
+        <div style="margin-bottom:.5rem">
+            <div style="font-size:.75rem;color:{t.TX2};font-weight:600;text-transform:uppercase;letter-spacing:.5px">
+                Escenarios guardados ({len(archivos)})
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
 
-        escenario_sel = st.selectbox("Seleccione un escenario:", ["— Nuevo —"] + archivos, index=default_idx)
-        if escenario_sel != "— Nuevo —":
-            c_load, c_del = st.columns(2)
-            if c_load.button("📂 Cargar", use_container_width=True):
-                with open(os.path.join(scenarios_dir, escenario_sel), encoding="utf-8") as f:
-                    datos = json.load(f)
+        # Botón "Nuevo escenario" destacado
+        if st.button("➕ Nuevo escenario", use_container_width=True, type="primary"):
+            st.session_state.pop("datos_formulario", None)
+            st.session_state.pop("parametros", None)
+            st.session_state.pop("resultado", None)
+            st.rerun()
 
-                tiene_sim = False
-                if "parametros" in datos:
-                    st.session_state["datos_formulario"] = datos["parametros"]
-                    st.session_state["parametros"] = ParametrosEntrada.model_validate(datos["parametros"])
-                    if "resultado" in datos:
-                        st.session_state["resultado"] = ResultadoSimulacion.from_dict(datos["resultado"])
-                        tiene_sim = True
-                    elif "resultado" in st.session_state:
-                        del st.session_state["resultado"]
-                else:
-                    st.session_state["datos_formulario"] = datos
-                    st.session_state["parametros"] = ParametrosEntrada.model_validate(datos)
-                    if "resultado" in st.session_state:
-                        del st.session_state["resultado"]
+        st.markdown("<hr style='margin:.8rem 0;border:0;border-top:1px solid #e5e7eb'>", unsafe_allow_html=True)
 
-                nombre_cargado = st.session_state["parametros"].nombre_escenario
-                if tiene_sim:
-                    st.session_state["mensaje_carga"] = f'<div class="alerta-success" style="margin-bottom:1.5rem">📂 Escenario <strong>{nombre_cargado}</strong> cargado con éxito. Resultados de simulación listos para ver en el Módulo 3.</div>'
-                else:
-                    st.session_state["mensaje_carga"] = f'<div class="alerta-info" style="margin-bottom:1.5rem">📂 Escenario <strong>{nombre_cargado}</strong> cargado. Por favor, ejecute la simulación en el Módulo 2 para persistir los resultados.</div>'
-                st.rerun()
+        # Lista de escenarios como botones
+        for archivo in sorted(archivos):
+            nombre_esc = archivo.replace(".json", "").replace("_", " ")
+            col_btn, col_del = st.columns([4, 1])
 
-            if c_del.button("🗑️ Borrar", use_container_width=True, type="secondary"):
-                os.remove(os.path.join(scenarios_dir, escenario_sel))
-                if "datos_formulario" in st.session_state:
-                    prev_name = st.session_state["datos_formulario"].get("nombre_escenario", "")
-                    if prev_name == escenario_sel.replace(".json", ""):
-                        st.session_state.pop("datos_formulario")
+            with col_btn:
+                if st.button(f"📂 {nombre_esc}", key=f"load_{archivo}", use_container_width=True):
+                    with open(os.path.join(scenarios_dir, archivo), encoding="utf-8") as f:
+                        datos = json.load(f)
+
+                    tiene_sim = False
+                    if "parametros" in datos:
+                        st.session_state["datos_formulario"] = datos["parametros"]
+                        st.session_state["parametros"] = ParametrosEntrada.model_validate(datos["parametros"])
+                        if "resultado" in datos:
+                            st.session_state["resultado"] = ResultadoSimulacion.from_dict(datos["resultado"])
+                            tiene_sim = True
+                        elif "resultado" in st.session_state:
+                            del st.session_state["resultado"]
+                    else:
+                        st.session_state["datos_formulario"] = datos
+                        st.session_state["parametros"] = ParametrosEntrada.model_validate(datos)
                         if "resultado" in st.session_state:
-                            st.session_state.pop("resultado")
-                st.rerun()
+                            del st.session_state["resultado"]
+
+                    nombre_cargado = st.session_state["parametros"].nombre_escenario
+                    if tiene_sim:
+                        st.session_state["mensaje_carga"] = f'<div class="alerta-success" style="margin-bottom:1.5rem">📂 Escenario <strong>{nombre_cargado}</strong> cargado con éxito. Resultados de simulación listos para ver en el Módulo 3.</div>'
+                    else:
+                        st.session_state["mensaje_carga"] = f'<div class="alerta-info" style="margin-bottom:1.5rem">📂 Escenario <strong>{nombre_cargado}</strong> cargado. Por favor, ejecute la simulación en el Módulo 2 para persistir los resultados.</div>'
+                    st.rerun()
+
+            with col_del:
+                if st.button("🗑️", key=f"del_{archivo}"):
+                    os.remove(os.path.join(scenarios_dir, archivo))
+                    if "datos_formulario" in st.session_state:
+                        prev_name = st.session_state["datos_formulario"].get("nombre_escenario", "")
+                        if prev_name == archivo.replace(".json", ""):
+                            st.session_state.pop("datos_formulario")
+                            if "resultado" in st.session_state:
+                                st.session_state.pop("resultado")
+                    st.rerun()
     else:
         st.info("No hay escenarios guardados aún.")
+        if st.button("➕ Crear primer escenario", use_container_width=True, type="primary"):
+            st.session_state.pop("datos_formulario", None)
+            st.session_state.pop("parametros", None)
+            st.session_state.pop("resultado", None)
+            st.rerun()
 
 prev = st.session_state.get("datos_formulario", {})
 
