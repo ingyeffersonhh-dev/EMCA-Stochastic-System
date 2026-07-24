@@ -38,25 +38,37 @@ html, body, [class*="css"] {{ font-family:'Inter',sans-serif; }}
     background:{t.BG2}!important;
     border-right:1px solid {t.BRD};
 }}
-/* Selectbox dropdown menu viewport-bounded so options near the bottom
-   of the sidebar remain reachable via internal scroll instead of
-   extending past the visible viewport.
-   Streamlit 1.60 uses React Aria Components: the listbox is a
-   <div role="listbox"> inside a StyledPopover, NOT a <ul>. */
-[data-testid="stSelectbox"] [role="listbox"],
+/* Selectbox dropdown — Streamlit 1.60 (React Aria Components).
+   The dropdown is a Popover PORTAL rendered at <body>, outside the
+   widget tree.  We target every possible container: the RAC Popover
+   overlay, the listbox div, and the Virtualizer scroll area. */
+
+/* 1. The Popover overlay (portal at body level) */
+div[data-trigger="ComboBox"],
+[role="presentation"] > div[role="listbox"],
+
+/* 2. The listbox itself (always a <div>, never <ul>) */
+div[role="listbox"],
+
+/* 3. Fallback: any element Streamlit marks as popover or virtual dropdown */
 [data-testid="stPopover"],
-div[role="listbox"] {{
+[data-testid="stVirtualDropdown"],
+[data-testid="stSelectboxVirtualDropdown"] {{
     max-height: calc(50vh - 60px) !important;
     overflow-y: auto !important;
 }}
-[data-testid="stSelectbox"] [role="listbox"]::-webkit-scrollbar,
+
+/* Scrollbar styling for all the above */
+div[data-trigger="ComboBox"]::-webkit-scrollbar,
+div[role="listbox"]::-webkit-scrollbar,
 [data-testid="stPopover"]::-webkit-scrollbar,
-div[role="listbox"]::-webkit-scrollbar {{
+[data-testid="stVirtualDropdown"]::-webkit-scrollbar {{
     width: 6px;
 }}
-[data-testid="stSelectbox"] [role="listbox"]::-webkit-scrollbar-thumb,
+div[data-trigger="ComboBox"]::-webkit-scrollbar-thumb,
+div[role="listbox"]::-webkit-scrollbar-thumb,
 [data-testid="stPopover"]::-webkit-scrollbar-thumb,
-div[role="listbox"]::-webkit-scrollbar-thumb {{
+[data-testid="stVirtualDropdown"]::-webkit-scrollbar-thumb {{
     background: {t.TX3}; border-radius: 3px;
 }}
 /* Scroll vertical del sidebar sin mostrar la barra
