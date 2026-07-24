@@ -17,17 +17,6 @@ from app.components.theme import get_active_tokens, _rgba
 
 t = get_active_tokens()
 
-# ── CSS for scenario buttons ──────────────────────────────────
-st.markdown("""
-<style>
-/* Center the trash emoji in delete buttons */
-div[data-testid="stHorizontalBlock"] > div:last-child > div > button {
-    justify-content: center !important;
-    padding: 0.25rem 0 !important;
-}
-</style>
-""", unsafe_allow_html=True)
-
 # ── Page header ────────────────────────────────────────────────
 st.markdown(f"""
 <div style="margin-bottom:1.5rem">
@@ -102,7 +91,7 @@ with st.sidebar:
                         st.rerun()
 
                 with col_del:
-                    if st.button("🗑️", key=f"del_{archivo}"):
+                    if st.button("  🗑️  ", key=f"del_{archivo}"):
                         os.remove(os.path.join(scenarios_dir, archivo))
                         if "datos_formulario" in st.session_state:
                             prev_name = st.session_state["datos_formulario"].get("nombre_escenario", "")
