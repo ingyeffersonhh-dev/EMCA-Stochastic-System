@@ -17,6 +17,17 @@ from app.components.theme import get_active_tokens, _rgba
 
 t = get_active_tokens()
 
+# ── CSS for scenario buttons ──────────────────────────────────
+st.markdown("""
+<style>
+/* Center the trash emoji in delete buttons */
+div[data-testid="stHorizontalBlock"] > div:last-child > div > button {
+    justify-content: center !important;
+    padding: 0.25rem 0 !important;
+}
+</style>
+""", unsafe_allow_html=True)
+
 # ── Page header ────────────────────────────────────────────────
 st.markdown(f"""
 <div style="margin-bottom:1.5rem">
