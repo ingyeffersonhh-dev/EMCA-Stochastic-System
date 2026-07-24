@@ -1,3 +1,10 @@
+# Install the project itself in editable mode so that core/ and app/
+# are importable as top-level packages on Streamlit Cloud (each MPA
+# page runs in its own script runner that does not inherit main.py's
+# sys.path modifications). pyproject.toml declares packages.find
+# for include=["core*", "app*"].
+-e .
+
 streamlit>=1.35
 simpy>=4.1
 numpy>=1.26
