@@ -38,35 +38,27 @@ html, body, [class*="css"] {{ font-family:'Inter',sans-serif; }}
     background:{t.BG2}!important;
     border-right:1px solid {t.BRD};
 }}
-/* ═══ Selectbox dropdown ═══
-   Streamlit 1.58 = BaseWeb, 1.60 = React Aria Popover portal.
-   Cap height AND flip upward when near viewport bottom.
-   CSS covers BaseWeb (<ul>); JS fallback covers portal (RAC). */
-ul[data-testid="stSelectboxVirtualDropdown"],
-[data-baseweb="menu"] ul,
-ul[role="listbox"] {{
-    max-height: calc(50vh - 60px) !important;
-    overflow-y: auto !important;
-}}
-ul[data-testid="stSelectboxVirtualDropdown"]::-webkit-scrollbar,
-[data-baseweb="menu"] ul::-webkit-scrollbar,
-ul[role="listbox"]::-webkit-scrollbar {{
-    width: 6px;
-}}
-ul[data-testid="stSelectboxVirtualDropdown"]::-webkit-scrollbar-thumb,
-[data-baseweb="menu"] ul::-webkit-scrollbar-thumb,
-ul[role="listbox"]::-webkit-scrollbar-thumb {{
-    background: {t.TX3}; border-radius: 3px;
-}}
-/* RAC Popover portal (Streamlit 1.60) — force fixed + upward */
+/* Selectbox dropdown — Streamlit 1.60 (React Aria Components).
+   The dropdown is a Popover PORTAL rendered at <body>, outside the
+   widget tree.  We target every possible container: the RAC Popover
+   overlay, the listbox div, and the Virtualizer scroll area. */
+
+/* 1. The Popover overlay (portal at body level) */
 div[data-trigger="ComboBox"],
+[role="presentation"] > div[role="listbox"],
+
+/* 2. The listbox itself (always a <div>, never <ul>) */
 div[role="listbox"],
+
+/* 3. Fallback: any element Streamlit marks as popover or virtual dropdown */
 [data-testid="stPopover"],
-[data-testid="stVirtualDropdown"] {{
+[data-testid="stVirtualDropdown"],
+[data-testid="stSelectboxVirtualDropdown"] {{
     max-height: calc(50vh - 60px) !important;
     overflow-y: auto !important;
-    position: fixed !important;
 }}
+
+/* Scrollbar styling for all the above */
 div[data-trigger="ComboBox"]::-webkit-scrollbar,
 div[role="listbox"]::-webkit-scrollbar,
 [data-testid="stPopover"]::-webkit-scrollbar,
@@ -569,58 +561,52 @@ pg = st.navigation({
     "Análisis": [pg_comp],
 })
 
-# ── JS: dynamically cap + flip selectbox dropdown upward ────────
-# CSS selectors break across Streamlit versions (BaseWeb vs RAC).
-# This MutationObserver finds any open dropdown and:
-#   1. If it extends past the viewport → flip it upward with scaleY(-1)
-#   2. Always enforce max-height for safety
+# ── JS: dynamically cap selectbox dropdown height ──────────────
+# CSS selectors for BaseWeb dropdowns can break across Streamlit
+# versions. This MutationObserver patches any open dropdown menu
+# so it never extends past the viewport, regardless of testid.
 st.markdown("""
 <script>
 (function() {
-    const MAX_H = Math.round(window.innerHeight * 0.45);
-
-    function patchDropdown(el) {
-        if (!el || el.dataset._emcaPatched) return;
-        el.dataset._emcaPatched = '1';
-
-        const rect = el.getBoundingClientRect();
+    function capDropdown(menu) {
+        if (!menu) return;
         const vh = window.innerHeight;
-
-        // Always cap height
-        el.style.maxHeight = MAX_H + 'px';
-        el.style.overflowY = 'auto';
-
-        // If it extends past the viewport → flip upward
-        if (rect.bottom > vh - 10) {
-            el.style.transformOrigin = 'bottom left';
-            el.style.transform = 'scaleY(-1)';
-            // Inner content must be un-flipped so text stays readable
-            Array.from(el.children).forEach(function(child) {
-                child.style.transform = 'scaleY(-1)';
-            });
+        const rect = menu.getBoundingClientRect();
+        // If the menu extends below the viewport, cap its height
+        if (rect.bottom > vh) {
+            const overflow = rect.bottom - vh + 20;
+            const newH = Math.max(150, rect.height - overflow);
+            menu.style.maxHeight = newH + 'px';
+            menu.style.overflowY = 'auto';
         }
     }
-
-    function scan() {
-        // Broad selectors: BaseWeb (1.58) + RAC portal (1.60)
-        document.querySelectorAll(
-            '[role="listbox"], ' +
-            '[data-baseweb="menu"] ul, ' +
+    function scanForOpenMenus() {
+        // BaseWeb select dropdown: look for option lists
+        const candidates = document.querySelectorAll(
+            '[role="listbox"], [data-baseweb="menu"] ul, ' +
             'ul[data-testid="stSelectboxVirtualDropdown"], ' +
-            'div[data-trigger="ComboBox"], ' +
-            '[data-testid="stPopover"], ' +
-            '[data-testid="stVirtualDropdown"]'
-        ).forEach(patchDropdown);
+            '[data-testid="stSelectbox"] [role="listbox"]'
+        );
+        candidates.forEach(capDropdown);
     }
-
-    // Watch for new dropdown elements appearing in the DOM
-    var obs = new MutationObserver(function() { setTimeout(scan, 30); });
+    const obs = new MutationObserver(function(muts) {
+        for (const m of muts) {
+            for (const node of m.addedNodes) {
+                if (node.nodeType === 1 && (
+                    node.matches && node.matches('[role="listbox"], [data-baseweb="menu"]') ||
+                    node.querySelector && (node.querySelector('[role="listbox"]') || node.querySelector('[data-baseweb="menu"]'))
+                )) {
+                    setTimeout(scanForOpenMenus, 30);
+                    setTimeout(scanForOpenMenus, 200);
+                }
+            }
+        }
+    });
     obs.observe(document.body, {childList: true, subtree: true});
-
-    // Also re-scan on click (dropdown opens on click)
+    // Also cap on any click (dropdown opens on click)
     document.addEventListener('click', function() {
-        setTimeout(scan, 30);
-        setTimeout(scan, 200);
+        setTimeout(scanForOpenMenus, 30);
+        setTimeout(scanForOpenMenus, 200);
     });
 })();
 </script>
