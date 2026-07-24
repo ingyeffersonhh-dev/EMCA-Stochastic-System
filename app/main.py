@@ -41,8 +41,8 @@ html, body, [class*="css"] {{ font-family:'Inter',sans-serif; }}
 /* Selectbox dropdown menu viewport-bounded so options near the bottom
    of the sidebar remain reachable via internal scroll instead of
    extending past the visible viewport (fixes "escenarios muy abajo").
-   Broad selectors cover Streamlit 1.58–1.60+ where testids vary.
-   ul[data-testid="stSelectboxVirtualDropdown"],
+   Broad selectors cover Streamlit 1.58–1.60+ where testids vary. */
+ul[data-testid="stSelectboxVirtualDropdown"],
 [data-baseweb="menu"] ul,
 [data-baseweb="select"] [role="listbox"],
 ul[role="listbox"] {{
