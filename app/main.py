@@ -444,6 +444,29 @@ p,span,div,label,li {{ color:{t.TX1}; }}
 
 st.markdown(css, unsafe_allow_html=True)
 
+# ── Dropdown height fix (JS) ─────────────────────────────────────
+# Streamlit 1.60 renders selectbox dropdowns as React Aria Popover
+# portals at <body> level.  CSS selectors cannot reliably reach them.
+# A MutationObserver watches the parent document and constrains any
+# [role="listbox"] element the instant it appears in the DOM.
+import streamlit.components.v1 as _components
+
+_components.html("""
+<script>
+(function() {
+    var doc = window.parent.document;
+    var maxH = 'calc(50vh - 60px)';
+    function fix() {
+        doc.querySelectorAll('[role="listbox"]').forEach(function(el) {
+            el.style.setProperty('max-height', maxH, 'important');
+            el.style.setProperty('overflow-y', 'auto', 'important');
+        });
+    }
+    new MutationObserver(fix).observe(doc.body, {childList:true, subtree:true});
+})();
+</script>
+""", height=0)
+
 # ── Logo SVG ───────────────────────────────────────────────────
 # Brand gradient stays constant per design open question (brand identity);
 # only the text fills below adapt to the active palette.
