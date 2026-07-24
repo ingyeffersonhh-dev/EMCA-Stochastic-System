@@ -38,6 +38,24 @@ html, body, [class*="css"] {{ font-family:'Inter',sans-serif; }}
     background:{t.BG2}!important;
     border-right:1px solid {t.BRD};
 }}
+/* Scroll vertical del sidebar sin mostrar la barra
+   Streamlit maneja el scroll real en [stSidebarContent]; apuntamos a él
+   y a los contenedores padres por si el testid cambia entre versiones. */
+[data-testid="stSidebar"],
+[data-testid="stSidebarContent"],
+[data-testid="stSidebarScrollableContainer"],
+[data-testid="stSidebarUserContent"] {{
+    overflow-y:auto !important;
+    scrollbar-width:none;          /* Firefox */
+    -ms-overflow-style:none;       /* IE/Edge legacy */
+}}
+[data-testid="stSidebar"]::-webkit-scrollbar,
+[data-testid="stSidebarContent"]::-webkit-scrollbar,
+[data-testid="stSidebarScrollableContainer"]::-webkit-scrollbar,
+[data-testid="stSidebarUserContent"]::-webkit-scrollbar {{
+    display:none;                  /* Chrome/Safari/Edge */
+    width:0; height:0;
+}}
 [data-testid="stSidebarNav"] {{ padding-top:.5rem; }}
 [data-testid="stSidebarNav"] a {{
     border-radius:10px; margin:2px 8px; padding:6px 12px;
