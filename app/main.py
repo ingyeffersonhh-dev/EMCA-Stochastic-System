@@ -38,6 +38,19 @@ html, body, [class*="css"] {{ font-family:'Inter',sans-serif; }}
     background:{t.BG2}!important;
     border-right:1px solid {t.BRD};
 }}
+/* Selectbox dropdown menu viewport-bounded so options near the bottom
+   of the sidebar remain reachable via internal scroll instead of
+   extending past the visible viewport (fixes "escenarios muy abajo"). */
+ul[data-testid="stSelectboxVirtualDropdown"] {{
+    max-height: calc(50vh - 60px) !important;
+    overflow-y: auto !important;
+}}
+ul[data-testid="stSelectboxVirtualDropdown"]::-webkit-scrollbar {{
+    width: 6px;
+}}
+ul[data-testid="stSelectboxVirtualDropdown"]::-webkit-scrollbar-thumb {{
+    background: {t.TX3}; border-radius: 3px;
+}}
 /* Scroll vertical del sidebar sin mostrar la barra
    Streamlit maneja el scroll real en [stSidebarContent]; apuntamos a él
    y a los contenedores padres por si el testid cambia entre versiones. */
