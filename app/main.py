@@ -42,14 +42,12 @@ html, body, [class*="css"] {{ font-family:'Inter',sans-serif; }}
    of the sidebar remain reachable via internal scroll instead of
    extending past the visible viewport (fixes "escenarios muy abajo").
    Broad selectors cover Streamlit 1.58–1.60+ where testids vary.
-   DIAGNOSTIC: yellow border confirms CSS pipeline reaches the cloud. */
-ul[data-testid="stSelectboxVirtualDropdown"],
+   ul[data-testid="stSelectboxVirtualDropdown"],
 [data-baseweb="menu"] ul,
 [data-baseweb="select"] [role="listbox"],
 ul[role="listbox"] {{
     max-height: calc(50vh - 60px) !important;
     overflow-y: auto !important;
-    outline: 3px solid #FFD600 !important;
 }}
 ul[data-testid="stSelectboxVirtualDropdown"]::-webkit-scrollbar,
 [data-baseweb="menu"] ul::-webkit-scrollbar,
