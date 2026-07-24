@@ -40,15 +40,25 @@ html, body, [class*="css"] {{ font-family:'Inter',sans-serif; }}
 }}
 /* Selectbox dropdown menu viewport-bounded so options near the bottom
    of the sidebar remain reachable via internal scroll instead of
-   extending past the visible viewport (fixes "escenarios muy abajo"). */
-ul[data-testid="stSelectboxVirtualDropdown"] {{
+   extending past the visible viewport (fixes "escenarios muy abajo").
+   Broad selectors cover Streamlit 1.58–1.60+ where testids vary. */
+ul[data-testid="stSelectboxVirtualDropdown"],
+[data-baseweb="menu"] ul,
+[data-baseweb="select"] [role="listbox"],
+ul[role="listbox"] {{
     max-height: calc(50vh - 60px) !important;
     overflow-y: auto !important;
 }}
-ul[data-testid="stSelectboxVirtualDropdown"]::-webkit-scrollbar {{
+ul[data-testid="stSelectboxVirtualDropdown"]::-webkit-scrollbar,
+[data-baseweb="menu"] ul::-webkit-scrollbar,
+[data-baseweb="select"] [role="listbox"]::-webkit-scrollbar,
+ul[role="listbox"]::-webkit-scrollbar {{
     width: 6px;
 }}
-ul[data-testid="stSelectboxVirtualDropdown"]::-webkit-scrollbar-thumb {{
+ul[data-testid="stSelectboxVirtualDropdown"]::-webkit-scrollbar-thumb,
+[data-baseweb="menu"] ul::-webkit-scrollbar-thumb,
+[data-baseweb="select"] [role="listbox"]::-webkit-scrollbar-thumb,
+ul[role="listbox"]::-webkit-scrollbar-thumb {{
     background: {t.TX3}; border-radius: 3px;
 }}
 /* Scroll vertical del sidebar sin mostrar la barra
@@ -517,4 +527,56 @@ pg = st.navigation({
     "Módulos": [pg_param, pg_sim, pg_dash],
     "Análisis": [pg_comp],
 })
+
+# ── JS: dynamically cap selectbox dropdown height ──────────────
+# CSS selectors for BaseWeb dropdowns can break across Streamlit
+# versions. This MutationObserver patches any open dropdown menu
+# so it never extends past the viewport, regardless of testid.
+st.markdown("""
+<script>
+(function() {
+    function capDropdown(menu) {
+        if (!menu) return;
+        const vh = window.innerHeight;
+        const rect = menu.getBoundingClientRect();
+        // If the menu extends below the viewport, cap its height
+        if (rect.bottom > vh) {
+            const overflow = rect.bottom - vh + 20;
+            const newH = Math.max(150, rect.height - overflow);
+            menu.style.maxHeight = newH + 'px';
+            menu.style.overflowY = 'auto';
+        }
+    }
+    function scanForOpenMenus() {
+        // BaseWeb select dropdown: look for option lists
+        const candidates = document.querySelectorAll(
+            '[role="listbox"], [data-baseweb="menu"] ul, ' +
+            'ul[data-testid="stSelectboxVirtualDropdown"], ' +
+            '[data-testid="stSelectbox"] [role="listbox"]'
+        );
+        candidates.forEach(capDropdown);
+    }
+    const obs = new MutationObserver(function(muts) {
+        for (const m of muts) {
+            for (const node of m.addedNodes) {
+                if (node.nodeType === 1 && (
+                    node.matches && node.matches('[role="listbox"], [data-baseweb="menu"]') ||
+                    node.querySelector && (node.querySelector('[role="listbox"]') || node.querySelector('[data-baseweb="menu"]'))
+                )) {
+                    setTimeout(scanForOpenMenus, 30);
+                    setTimeout(scanForOpenMenus, 200);
+                }
+            }
+        }
+    });
+    obs.observe(document.body, {childList: true, subtree: true});
+    // Also cap on any click (dropdown opens on click)
+    document.addEventListener('click', function() {
+        setTimeout(scanForOpenMenus, 30);
+        setTimeout(scanForOpenMenus, 200);
+    });
+})();
+</script>
+""", unsafe_allow_html=True)
+
 pg.run()
