@@ -40,25 +40,23 @@ html, body, [class*="css"] {{ font-family:'Inter',sans-serif; }}
 }}
 /* Selectbox dropdown menu viewport-bounded so options near the bottom
    of the sidebar remain reachable via internal scroll instead of
-   extending past the visible viewport (fixes "escenarios muy abajo").
-   Broad selectors cover Streamlit 1.58–1.60+ where testids vary. */
-ul[data-testid="stSelectboxVirtualDropdown"],
-[data-baseweb="menu"] ul,
-[data-baseweb="select"] [role="listbox"],
-ul[role="listbox"] {{
+   extending past the visible viewport.
+   Streamlit 1.60 uses React Aria Components: the listbox is a
+   <div role="listbox"> inside a StyledPopover, NOT a <ul>. */
+[data-testid="stSelectbox"] [role="listbox"],
+[data-testid="stPopover"],
+div[role="listbox"] {{
     max-height: calc(50vh - 60px) !important;
     overflow-y: auto !important;
 }}
-ul[data-testid="stSelectboxVirtualDropdown"]::-webkit-scrollbar,
-[data-baseweb="menu"] ul::-webkit-scrollbar,
-[data-baseweb="select"] [role="listbox"]::-webkit-scrollbar,
-ul[role="listbox"]::-webkit-scrollbar {{
+[data-testid="stSelectbox"] [role="listbox"]::-webkit-scrollbar,
+[data-testid="stPopover"]::-webkit-scrollbar,
+div[role="listbox"]::-webkit-scrollbar {{
     width: 6px;
 }}
-ul[data-testid="stSelectboxVirtualDropdown"]::-webkit-scrollbar-thumb,
-[data-baseweb="menu"] ul::-webkit-scrollbar-thumb,
-[data-baseweb="select"] [role="listbox"]::-webkit-scrollbar-thumb,
-ul[role="listbox"]::-webkit-scrollbar-thumb {{
+[data-testid="stSelectbox"] [role="listbox"]::-webkit-scrollbar-thumb,
+[data-testid="stPopover"]::-webkit-scrollbar-thumb,
+div[role="listbox"]::-webkit-scrollbar-thumb {{
     background: {t.TX3}; border-radius: 3px;
 }}
 /* Scroll vertical del sidebar sin mostrar la barra
